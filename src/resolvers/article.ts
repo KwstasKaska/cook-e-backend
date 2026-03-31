@@ -32,8 +32,9 @@ export class ArticleResolver {
           ) AS  creator
       from article a 
       inner join public.user u ON u.id = a."creatorId"
-      where u.role = 'nutritionist' AND u.id = '${req.session.userId}'
-      order by a."createdAt" DESC`
+      where u.role = 'nutritionist' AND u.id = '$1'
+      order by a."createdAt" DESC`,
+      [req.session.userId],
     );
 
     return nutritionistArticles;
@@ -49,7 +50,7 @@ export class ArticleResolver {
   async createArticle(
     @Arg('data') data: AddArticleInput,
     @Arg('picture', () => GraphQLUpload) picture: FileUpload,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<ArticleResponse> {
     const errors = validateArticle(data);
 
@@ -83,7 +84,7 @@ export class ArticleResolver {
   async updateArticle(
     @Arg('data') data: UpdateArticleInput,
     @Arg('picture', () => GraphQLUpload) picture: FileUpload,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<ArticleResponse | null> {
     const errors = validateArticle(data);
     if (errors) {
@@ -128,7 +129,7 @@ export class ArticleResolver {
   @UseMiddleware(isAuth, isNutr)
   async deleteArticle(
     @Arg('id', () => Int) id: number,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<boolean> {
     const article = await Article.findOne({
       where: {

@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -37,15 +38,15 @@ export class Recipe extends BaseEntity {
   @Column()
   title: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   chefComment?: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   recipeImage: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   description?: string;
 
@@ -77,9 +78,11 @@ export class Recipe extends BaseEntity {
   @Column({ type: 'int', nullable: true })
   caloriesTotal?: number;
 
+  // Relations
+
   @OneToMany(
     () => RecipeIngredient,
-    (recipeIngredient) => recipeIngredient.recipe
+    (recipeIngredient) => recipeIngredient.recipe,
   )
   recipeIngredients: RecipeIngredient[];
 
@@ -89,7 +92,12 @@ export class Recipe extends BaseEntity {
   @ManyToOne(() => ChefProfile, (author) => author.recipes)
   author: ChefProfile;
 
+  @Field()
+  @Column()
+  authorId: number;
+
   @ManyToMany(() => Utensil, (utensil) => utensil.recipes, { cascade: true })
+  @JoinTable()
   utensils: Utensil[];
 
   @Field(() => String)
