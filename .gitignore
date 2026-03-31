@@ -1,0 +1,9 @@
+.env
+.env.local
+.env.production
+node_modules
+dist
+app-data-source.ts
+*.tsbuildinfo
+yarn-debug.log*
+yarn-error.log*
