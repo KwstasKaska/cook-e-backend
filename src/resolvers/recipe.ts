@@ -19,11 +19,15 @@ import { MyContext } from '../types';
 import AppDataSource from '../app-data-source';
 import { CreateRecipeInput, UpdateRecipeInput } from './types/recipe-input';
 import { RecipeResponse } from './types/recipe-object';
+import {
+  validateCreateRecipe,
+  validateUpdateRecipe,
+} from '../utils/validateRecipe';
 import { In } from 'typeorm';
 
 @Resolver(Recipe)
 export class RecipeResolver {
-  //Public Queries
+  //  Public Queries
 
   @Query(() => [Recipe])
   async recipes(): Promise<Recipe[]> {
@@ -49,7 +53,7 @@ export class RecipeResolver {
     });
   }
 
-  // Chef Queries
+  //  Chef Queries
 
   @Query(() => [Recipe])
   @UseMiddleware(isAuth, isChef)
@@ -75,7 +79,7 @@ export class RecipeResolver {
     });
   }
 
-  //Chef Mutations
+  //  Chef Mutations
 
   @Mutation(() => RecipeResponse)
   @UseMiddleware(isAuth, isChef)
@@ -83,6 +87,9 @@ export class RecipeResolver {
     @Arg('data') data: CreateRecipeInput,
     @Ctx() { req }: MyContext,
   ): Promise<RecipeResponse> {
+    const errors = validateCreateRecipe(data);
+    if (errors) return { errors };
+
     const chefProfile = await ChefProfile.findOne({
       where: { user: { id: req.session.userId } },
     });
@@ -90,28 +97,6 @@ export class RecipeResolver {
     if (!chefProfile) {
       return {
         errors: [{ field: 'chef', message: 'Δεν βρέθηκε προφίλ μάγειρα.' }],
-      };
-    }
-
-    if (!data.ingredients || data.ingredients.length === 0) {
-      return {
-        errors: [
-          {
-            field: 'ingredients',
-            message: 'Η συνταγή πρέπει να έχει τουλάχιστον ένα υλικό.',
-          },
-        ],
-      };
-    }
-
-    if (!data.steps || data.steps.length === 0) {
-      return {
-        errors: [
-          {
-            field: 'steps',
-            message: 'Η συνταγή πρέπει να έχει τουλάχιστον ένα βήμα.',
-          },
-        ],
       };
     }
 
@@ -208,6 +193,9 @@ export class RecipeResolver {
     @Arg('data') data: UpdateRecipeInput,
     @Ctx() { req }: MyContext,
   ): Promise<RecipeResponse> {
+    const errors = validateUpdateRecipe(data);
+    if (errors) return { errors };
+
     const chefProfile = await ChefProfile.findOne({
       where: { user: { id: req.session.userId } },
     });

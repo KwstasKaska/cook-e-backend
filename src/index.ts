@@ -21,6 +21,12 @@ import { graphqlUploadExpress } from 'graphql-upload-minimal';
 import { AppointmentResolver } from './resolvers/appointment';
 import { AppointmentRequestResolver } from './resolvers/appointRequest';
 import { NutritionPlanResolver } from './resolvers/mealScheduler';
+import { RecipeResolver } from './resolvers/recipe';
+import {
+  IngredientResolver,
+  UtensilResolver,
+} from './resolvers/ingredientAndUtensil';
+import { ChefProfileResolver } from './resolvers/chefProfile';
 
 const main = async () => {
   // In order to interact with the database and hold my db connection settings, i have to initialize dataSource
@@ -60,7 +66,7 @@ const main = async () => {
       saveUninitialized: false,
       secret: process.env.SESSION_SECRET!,
       resave: false,
-    })
+    }),
   );
 
   // Here i create an apollo server instance in order to create my schema and the resolvers usings typegraphql
@@ -73,6 +79,10 @@ const main = async () => {
         AppointmentResolver,
         AppointmentRequestResolver,
         NutritionPlanResolver,
+        RecipeResolver,
+        ChefProfileResolver,
+        IngredientResolver,
+        UtensilResolver,
       ],
       validate: false,
     }),
@@ -83,7 +93,7 @@ const main = async () => {
     graphqlUploadExpress({
       maxFileSize: 1000000000,
       maxFiles: 10,
-    })
+    }),
   );
 
   app.use(express.static('public'));
@@ -102,7 +112,7 @@ const main = async () => {
     bodyParser.json(),
     expressMiddleware(apolloServer, {
       context: async ({ req, res }) => ({ req, res, redis: redis }),
-    })
+    }),
   );
 
   // I define the port of the server
