@@ -1,29 +1,31 @@
 import { InputType, Field } from 'type-graphql';
-import { Article } from '../../entities/Nutritionist/Article';
+
+// Nutritionist/chef writes in Greek only — resolver auto-translates to _en columns
 
 @InputType({ description: 'New Article Data' })
-export class AddArticleInput implements Partial<Article> {
+export class AddArticleInput {
   @Field()
-  title: string;
+  title!: string;
 
   @Field()
-  text: string;
+  text!: string;
 
   @Field(() => String, { nullable: true })
   image?: string;
 }
 
 @InputType({ description: 'Update Article Data' })
-export class UpdateArticleInput implements Partial<Article> {
+export class UpdateArticleInput {
   @Field()
-  id: number;
+  id!: number;
+
+  // When provided, resolver re-translates to fill the _en column
+  @Field({ nullable: true })
+  title?: string;
 
   @Field({ nullable: true })
-  title: string;
-
-  @Field()
-  text: string;
+  text?: string;
 
   @Field(() => String, { nullable: true })
-  image: string;
+  image?: string;
 }

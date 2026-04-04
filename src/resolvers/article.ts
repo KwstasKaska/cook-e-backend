@@ -14,36 +14,95 @@ import { isAuth } from '../middleware/isAuth';
 import { isNutr } from '../middleware/isNutr';
 import AppDataSource from '../app-data-source';
 import { ArticleResponse } from './types/article-object';
-import { validateArticle } from '../utils/validateArticle';
+import {
+  validateArticle,
+  validateUpdateArticle,
+} from '../utils/validateArticle';
 import { FileUpload, GraphQLUpload } from 'graphql-upload-minimal';
 import { createWriteStream } from 'fs';
 import path from 'path';
+import { translateText } from '../utils/translate';
 
 @Resolver(Article)
 export class ArticleResolver {
-  @Query(() => [Article])
-  async articles(@Ctx() { req }: MyContext): Promise<Article[]> {
-    const nutritionistArticles = await AppDataSource.query(
-      ` select a.* ,
-        json_build_object(
-          'id', u.id,
-          'username', u.username,
-          'email', u.email          
-          ) AS  creator
-      from article a 
-      inner join public.user u ON u.id = a."creatorId"
-      where u.role = 'nutritionist' AND u.id = '$1'
-      order by a."createdAt" DESC`,
-      [req.session.userId],
-    );
+  //  Public Queries
 
-    return nutritionistArticles;
+  @Query(() => [Article])
+  async articles(): Promise<Article[]> {
+    return AppDataSource.query(
+      `SELECT a.*,
+        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
+       FROM article a
+       INNER JOIN public.user u ON u.id = a."creatorId"
+       WHERE u.role = 'nutritionist'
+       ORDER BY a."createdAt" DESC`,
+    );
+  }
+
+  @Query(() => [Article])
+  async articlesByNutritionist(
+    @Arg('nutritionistId', () => Int) nutritionistId: number,
+  ): Promise<Article[]> {
+    return AppDataSource.query(
+      `SELECT a.*,
+        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
+       FROM article a
+       INNER JOIN public.user u ON u.id = a."creatorId"
+       WHERE u.role = 'nutritionist' AND u.id = $1
+       ORDER BY a."createdAt" DESC`,
+      [nutritionistId],
+    );
+  }
+
+  @Query(() => [Article])
+  async chefArticles(): Promise<Article[]> {
+    return AppDataSource.query(
+      `SELECT a.*,
+        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
+       FROM article a
+       INNER JOIN public.user u ON u.id = a."creatorId"
+       WHERE u.role = 'chef'
+       ORDER BY a."createdAt" DESC`,
+    );
+  }
+
+  @Query(() => [Article])
+  async articlesByChef(
+    @Arg('chefId', () => Int) chefId: number,
+  ): Promise<Article[]> {
+    return AppDataSource.query(
+      `SELECT a.*,
+        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
+       FROM article a
+       INNER JOIN public.user u ON u.id = a."creatorId"
+       WHERE u.role = 'chef' AND u.id = $1
+       ORDER BY a."createdAt" DESC`,
+      [chefId],
+    );
   }
 
   @Query(() => Article, { nullable: true })
   article(@Arg('id', () => Int) id: number): Promise<Article | null> {
     return Article.findOne({ where: { id } });
   }
+
+  // ─── Nutritionist Private Queries ─────────────────────────────────
+
+  @Query(() => [Article])
+  @UseMiddleware(isAuth, isNutr)
+  async myArticles(@Ctx() { req }: MyContext): Promise<Article[]> {
+    return AppDataSource.query(
+      `SELECT a.*,
+        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
+       FROM article a
+       INNER JOIN public.user u ON u.id = a."creatorId"
+       WHERE u.role = 'nutritionist' AND u.id = $1
+       ORDER BY a."createdAt" DESC`,
+      [req.session.userId],
+    );
+  }
+
+  // Mutations
 
   @Mutation(() => ArticleResponse)
   @UseMiddleware(isAuth, isNutr)
@@ -53,10 +112,14 @@ export class ArticleResolver {
     @Ctx() { req }: MyContext,
   ): Promise<ArticleResponse> {
     const errors = validateArticle(data);
+    if (errors) return { errors };
 
-    if (errors) {
-      return { errors };
-    }
+    // Translate title and text from Greek to English before saving
+    const [title_en, text_en] = await Promise.all([
+      translateText(data.title),
+      translateText(data.text),
+    ]);
+
     const { createReadStream, filename } = picture;
     const imagePath = path.join(__dirname, `../../public/images/${filename}`);
 
@@ -65,11 +128,13 @@ export class ArticleResolver {
         .pipe(createWriteStream(imagePath))
         .on('finish', async () => {
           const article = await Article.create({
-            ...data,
+            title_el: data.title,
+            title_en,
+            text_el: data.text,
+            text_en,
             creatorId: req.session.userId,
-            image: `http:localhost:4000/images/${filename}`,
+            image: `http://localhost:4000/images/${filename}`,
           }).save();
-
           resolve({ article });
         })
         .on('error', (error) => {
@@ -83,17 +148,29 @@ export class ArticleResolver {
   @UseMiddleware(isAuth, isNutr)
   async updateArticle(
     @Arg('data') data: UpdateArticleInput,
-    @Arg('picture', () => GraphQLUpload) picture: FileUpload,
+    @Arg('picture', () => GraphQLUpload, { nullable: true })
+    picture: FileUpload,
     @Ctx() { req }: MyContext,
   ): Promise<ArticleResponse | null> {
-    const errors = validateArticle(data);
-    if (errors) {
-      return { errors };
+    const errors = validateUpdateArticle(data);
+    if (errors) return { errors };
+
+    // Only translate fields that were actually provided
+    const [title_en, text_en] = await Promise.all([
+      data.title ? translateText(data.title) : Promise.resolve(undefined),
+      data.text ? translateText(data.text) : Promise.resolve(undefined),
+    ]);
+
+    const updatedFields: any = {};
+
+    if (data.title !== undefined) {
+      updatedFields.title_el = data.title;
+      updatedFields.title_en = title_en;
     }
-    let updatedFields: any = {
-      title: data.title,
-      text: data.text,
-    };
+    if (data.text !== undefined) {
+      updatedFields.text_el = data.text;
+      updatedFields.text_en = text_en;
+    }
 
     if (picture) {
       const { createReadStream, filename } = picture;
@@ -109,7 +186,7 @@ export class ArticleResolver {
           });
       });
 
-      updatedFields.image = `http:localhost:4000/images/${filename}`;
+      updatedFields.image = `http://localhost:4000/images/${filename}`;
     }
 
     const result = await AppDataSource.createQueryBuilder()
@@ -132,35 +209,12 @@ export class ArticleResolver {
     @Ctx() { req }: MyContext,
   ): Promise<boolean> {
     const article = await Article.findOne({
-      where: {
-        id,
-        creatorId: req.session.userId,
-      },
+      where: { id, creatorId: req.session.userId },
     });
 
-    if (!article) {
-      // Δεν βρέθηκε ή δεν ανήκει στον διατροφολόγο
-      return false;
-    }
+    if (!article) return false;
 
     await Article.delete({ id });
     return true;
   }
-
-  // @Mutation(() => UploadImage)
-  // async uploadImage(
-  //   @Arg('picture', () => GraphQLUpload)
-  //   { createReadStream, filename }: FileUpload
-  // ): Promise<UploadImage> {
-  //   const imagePath = __dirname + `/../../images/${filename}`;
-
-  //   return new Promise(async (resolve, reject) =>
-  //     createReadStream()
-  //       .pipe(createWriteStream(imagePath))
-  //       .on('finish', () =>
-  //         resolve({ url: `http://localhost:4000/images/${filename}` })
-  //       )
-  //       .on('error', () => reject(false))
-  //   );
-  // }
 }

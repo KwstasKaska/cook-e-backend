@@ -6,11 +6,14 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "moduleResolution": "node",
+    "rootDir": "./src",
+    "moduleResolution": "node10",
+    "ignoreDeprecations": "6.0",
     "removeComments": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
+    "strictPropertyInitialization": false,
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -24,10 +27,7 @@
     "allowJs": true,
     "maxNodeModuleJsDepth": 10,
 
-    "typeRoots": [
-      "src/resolvers/types", // this is where you define your types
-      "./node_modules/@types" //this where npm packages containing types are located
-    ]
+    "typeRoots": ["src/resolvers/types", "./node_modules/@types"]
   },
   "exclude": ["node_modules"],
   "include": ["./src/**/*.tsx", "./src/**/*.ts"]

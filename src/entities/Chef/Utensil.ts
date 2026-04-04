@@ -1,4 +1,3 @@
-// Utensil.ts
 import { Field, ObjectType } from 'type-graphql';
 import {
   BaseEntity,
@@ -18,11 +17,19 @@ export class Utensil extends BaseEntity {
 
   @Field()
   @Column()
-  name: string;
+  name_el: string;
 
   @Field()
   @Column()
-  category: string;
+  name_en: string;
+
+  @Field()
+  @Column()
+  category_el: string;
+
+  @Field()
+  @Column()
+  category_en: string;
 
   @ManyToMany(() => Recipe, (recipe) => recipe.utensils)
   recipes: Recipe[];

@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from 'type-graphql';
+import { Field, ObjectType } from 'type-graphql';
 import { BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Ingredient } from './Ingredient';
 import { Recipe } from './Recipe';
@@ -33,9 +33,10 @@ export class RecipeIngredient extends BaseEntity {
   })
   ingredient: Ingredient;
 
-  @Field(() => Int)
-  @Column()
-  quantity: number;
+  // String to support fractions like "1/2", "3/4" etc.
+  @Field(() => String)
+  @Column({ type: 'text', nullable: true })
+  quantity: string;
 
   @Field(() => String)
   @Column({ type: 'text', nullable: true })

@@ -27,18 +27,8 @@ export enum MealType {
   DINNER = 'Dinner',
 }
 
-registerEnumType(DayOfWeek, {
-  name: 'DayOfWeek',
-});
-
-registerEnumType(MealType, {
-  name: 'MealType',
-});
-
-// Creating the entity of meal scheduler and defining the proper columns so they can be created in the table in my database and also define them with typegraphql so i can get the graphql schema
-// @Columns is for the database
-// @Fields is for the typegraphql
-// If i dont use a field operator that means that i want to hide the property from the data model
+registerEnumType(DayOfWeek, { name: 'DayOfWeek' });
+registerEnumType(MealType, { name: 'MealType' });
 
 @ObjectType()
 @Entity()
@@ -55,9 +45,18 @@ export class MealScheduler extends BaseEntity {
   @Column({ type: 'enum', enum: MealType })
   mealType!: MealType;
 
+  // ── Translatable fields ────────────────────────────────────────────
+  // The nutritionist writes in Greek; the backend auto-fills comment_en
+
   @Field(() => String)
   @Column('text')
-  comment!: string;
+  comment_el!: string;
+
+  @Field(() => String)
+  @Column('text')
+  comment_en!: string;
+
+  // ── Relations ──────────────────────────────────────────────────────
 
   @Field(() => User)
   @ManyToOne(() => User, (user) => user.nutritionPlans)

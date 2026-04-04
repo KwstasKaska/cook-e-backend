@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType, registerEnumType } from 'type-graphql';
+import { Field, Float, Int, ObjectType, registerEnumType } from 'type-graphql';
 import {
   BaseEntity,
   Column,
@@ -15,6 +15,9 @@ import { Step } from './Step';
 import { RecipeIngredient } from './RecipeIngredient';
 import { ChefProfile } from './ChefProfile';
 import { Utensil } from './Utensil';
+import { RecipeRating } from '../General/RecipeRating';
+import { UserFavorite } from '../User/UserFavorite';
+import { CookedRecipe } from '../User/CookedRecipe';
 
 export enum Difficulty {
   EASY = 'easy',
@@ -22,9 +25,24 @@ export enum Difficulty {
   DIFFICULT = 'difficult',
 }
 
+export enum RecipeCategory {
+  MEAT = 'Κρέας',
+  LEGUMES = 'Όσπρια',
+  SEAFOOD = 'Θαλασσινά',
+  SALADS = 'Σαλάτες',
+  PASTA = 'Ζυμαρικά',
+  APPETIZERS = 'Ορεκτικά',
+  VEGAN = 'Vegan',
+}
+
 registerEnumType(Difficulty, {
   name: 'Difficulty',
   description: 'The difficulty level of the food preparation',
+});
+
+registerEnumType(RecipeCategory, {
+  name: 'RecipeCategory',
+  description: 'The category of the recipe',
 });
 
 @ObjectType()
@@ -34,21 +52,37 @@ export class Recipe extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  // ── Translatable fields ────────────────────────────────────────────
+
   @Field(() => String)
   @Column()
-  title: string;
+  title_el: string;
+
+  @Field(() => String)
+  @Column()
+  title_en: string;
 
   @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
-  chefComment?: string;
+  description_el?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'text', nullable: true })
+  description_en?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'text', nullable: true })
+  chefComment_el?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'text', nullable: true })
+  chefComment_en?: string;
+
+  // ── Non-translatable fields ────────────────────────────────────────
 
   @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   recipeImage: string;
-
-  @Field(() => String, { nullable: true })
-  @Column({ type: 'text', nullable: true })
-  description?: string;
 
   @Field(() => Difficulty)
   @Column({ type: 'enum', enum: Difficulty, default: Difficulty.EASY })
@@ -66,19 +100,35 @@ export class Recipe extends BaseEntity {
   @Column({ type: 'int', nullable: true })
   restTime?: number;
 
-  @Field(() => String)
+  // Free-text shown on recipe detail page e.g. "Ελληνική", "Ιταλική"
+  @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
-  foodEthnicity: string;
+  foodEthnicity?: string;
 
-  @Field(() => String)
-  @Column({ type: 'text', nullable: true })
-  foodEvent: string;
+  // Predefined category matching the UI filter tabs
+  @Field(() => RecipeCategory, { nullable: true })
+  @Column({ type: 'enum', enum: RecipeCategory, nullable: true })
+  category?: RecipeCategory;
 
-  @Field(() => Int, { nullable: true })
-  @Column({ type: 'int', nullable: true })
+  // ── Macro / nutritional fields ─────────────────────────────────────
+
+  @Field(() => Float, { nullable: true })
+  @Column({ type: 'float', nullable: true })
   caloriesTotal?: number;
 
-  // Relations
+  @Field(() => Float, { nullable: true })
+  @Column({ type: 'float', nullable: true })
+  protein?: number;
+
+  @Field(() => Float, { nullable: true })
+  @Column({ type: 'float', nullable: true })
+  carbs?: number;
+
+  @Field(() => Float, { nullable: true })
+  @Column({ type: 'float', nullable: true })
+  fat?: number;
+
+  // ── Relations ──────────────────────────────────────────────────────
 
   @OneToMany(
     () => RecipeIngredient,
@@ -99,6 +149,15 @@ export class Recipe extends BaseEntity {
   @ManyToMany(() => Utensil, (utensil) => utensil.recipes, { cascade: true })
   @JoinTable()
   utensils: Utensil[];
+
+  @OneToMany(() => RecipeRating, (rating) => rating.recipe)
+  ratings: RecipeRating[];
+
+  @OneToMany(() => UserFavorite, (fav) => fav.recipe)
+  favoritedBy: UserFavorite[];
+
+  @OneToMany(() => CookedRecipe, (log) => log.recipe)
+  cookedLogs: CookedRecipe[];
 
   @Field(() => String)
   @CreateDateColumn({ type: 'timestamp' })

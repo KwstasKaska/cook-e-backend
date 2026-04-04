@@ -13,6 +13,10 @@ import { isNutr } from '../middleware/isNutr';
 import AppDataSource from '../app-data-source';
 import { Appointment } from '../entities/Nutritionist/Appointment';
 import {
+  AppointmentRequest,
+  AppointmentStatus,
+} from '../entities/Nutritionist/AppointmentRequest';
+import {
   AddAppointmentInput,
   UpdateSlotInput,
 } from './types/appointment-input';
@@ -25,7 +29,7 @@ export class AppointmentResolver {
   @UseMiddleware(isAuth, isNutr)
   async getMyAppointments(
     @Ctx() { req }: MyContext,
-    @Arg('date', () => String, { nullable: true }) date?: string
+    @Arg('date', () => String, { nullable: true }) date?: string,
   ): Promise<Appointment[]> {
     const query = `
         SELECT * FROM appointment
@@ -39,11 +43,25 @@ export class AppointmentResolver {
     return slots;
   }
 
+  // Public — available slots for a given nutritionist
+  @Query(() => [Appointment])
+  async availableSlots(
+    @Arg('nutritionistId', () => Int) nutritionistId: number,
+  ): Promise<Appointment[]> {
+    return Appointment.find({
+      where: {
+        nutritionistId,
+        isAvailable: true,
+      },
+      order: { date: 'ASC', time: 'ASC' },
+    });
+  }
+
   @Mutation(() => AppointmentResponse)
   @UseMiddleware(isAuth, isNutr)
   async createAppointment(
     @Arg('data') data: AddAppointmentInput,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<AppointmentResponse> {
     const errors = validateAppointments(data);
     if (errors) {
@@ -94,14 +112,13 @@ export class AppointmentResolver {
   @UseMiddleware(isAuth, isNutr)
   async updateAppointment(
     @Arg('data') data: UpdateSlotInput,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<AppointmentResponse | null> {
     const slot = await Appointment.findOne({
       where: {
         id: data.slotId,
         nutritionistId: req.session.userId,
       },
-      relations: ['nutritionistProfile'],
     });
 
     if (!slot) {
@@ -115,7 +132,18 @@ export class AppointmentResolver {
       };
     }
 
-    if (slot.nutritionistProfile) {
+    // ── Booking check ────────────────────────────────────────────────
+    // Old code checked slot.nutritionistProfile which was unreliable.
+    // Correctly check whether an ACCEPTED AppointmentRequest exists
+    // for this slot — if so, it's booked and cannot be modified.
+    const acceptedRequest = await AppointmentRequest.findOne({
+      where: {
+        slotId: slot.id,
+        status: AppointmentStatus.ACCEPTED,
+      },
+    });
+
+    if (acceptedRequest) {
       return {
         errors: [
           {
@@ -126,6 +154,7 @@ export class AppointmentResolver {
         ],
       };
     }
+    // ────────────────────────────────────────────────────────────────
 
     if (data.date) slot.date = data.date;
     if (data.time) slot.time = data.time;
@@ -140,24 +169,26 @@ export class AppointmentResolver {
   @UseMiddleware(isAuth, isNutr)
   async deleteAppointment(
     @Arg('slotId', () => Int) slotId: number,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<boolean> {
     const appointment = await Appointment.findOne({
       where: {
         id: slotId,
-        nutritionistId: req.session.userId, // Έλεγχος αν το ραντεβού ανήκει στον διατροφολόγο
+        nutritionistId: req.session.userId,
       },
     });
 
-    if (!appointment) {
-      // Αν δεν βρεθεί το ραντεβού ή δεν ανήκει στον διατροφολόγο, δεν κάνουμε διαγραφή
-      return false;
-    }
+    if (!appointment) return false;
 
-    // if (appointment.userId) {
-    //   // Αν έχει κρατηθεί ήδη, δεν επιτρέπουμε διαγραφή
-    //   return false;
-    // }
+    // Also block deletion if the slot has an accepted request
+    const acceptedRequest = await AppointmentRequest.findOne({
+      where: {
+        slotId,
+        status: AppointmentStatus.ACCEPTED,
+      },
+    });
+
+    if (acceptedRequest) return false;
 
     await Appointment.delete({ id: slotId });
     return true;

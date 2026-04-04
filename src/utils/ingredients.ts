@@ -1,14 +1,5 @@
-export interface IngredientCategory {
-  vegetables: Vegetables[]; // λαχανικά
-  fruits: Fruits[]; // φρούτα
-  grain: Grain[]; // ψωμί και δημητριακά
-  dairy: Dairy[]; // γαλακτοκομικά
-  meat: Meat[]; // κρεας, κοτοπουλο, ψαρικά, θαλασσινά
-  lipid: Lipid[]; // λίπη και λιπαρά
-  legumes: Legumes[]; // οσπρια
-  pastry: Pastry[]; // γλυκίσματα, αναψυκτικά, σνακς
-  spices: Spices[];
-}
+// Each Greek enum stays as-is (used for el values)
+// Add a matching English enum with the same keys
 
 export enum Vegetables {
   Carrot = 'Καρότο',
@@ -33,6 +24,29 @@ export enum Vegetables {
   Leek = 'Πράσο',
   Celery = 'Σέλινο',
 }
+export enum VegetablesEN {
+  Carrot = 'Carrot',
+  Broccoli = 'Broccoli',
+  Cauliflower = 'Cauliflower',
+  Spinach = 'Spinach',
+  Cabbage = 'Cabbage',
+  Onion = 'Onion',
+  Garlic = 'Garlic',
+  Pepper = 'Pepper',
+  Tomato = 'Tomato',
+  Cucumber = 'Cucumber',
+  Eggplant = 'Eggplant',
+  GreenBeans = 'Green Beans',
+  Potato = 'Potato',
+  Zucchini = 'Zucchini',
+  SweetPotato = 'Sweet Potato',
+  Radish = 'Radish',
+  Lettuce = 'Lettuce',
+  Artichoke = 'Artichoke',
+  Mushrooms = 'Mushrooms',
+  Leek = 'Leek',
+  Celery = 'Celery',
+}
 
 export enum Spices {
   Oregano = 'Ρίγανη',
@@ -48,6 +62,21 @@ export enum Spices {
   Cumin = 'Κύμινο',
   BayLeaves = 'Φύλλα Δάφνης',
   Mint = 'Μέντα',
+}
+export enum SpicesEN {
+  Oregano = 'Oregano',
+  Thyme = 'Thyme',
+  Rosemary = 'Rosemary',
+  Dill = 'Dill',
+  Basil = 'Basil',
+  Cinnamon = 'Cinnamon',
+  Parsley = 'Parsley',
+  Coriander = 'Coriander',
+  RedPepperFlakes = 'Red Pepper Flakes',
+  Paprika = 'Paprika',
+  Cumin = 'Cumin',
+  BayLeaves = 'Bay Leaves',
+  Mint = 'Mint',
 }
 
 export enum Fruits {
@@ -71,6 +100,28 @@ export enum Fruits {
   Cranberry = 'Κράνμπερι',
   Raisins = 'Σταφίδες',
 }
+export enum FruitsEN {
+  Lemon = 'Lemon',
+  Orange = 'Orange',
+  Grapefruit = 'Grapefruit',
+  Strawberry = 'Strawberry',
+  Raspberry = 'Raspberry',
+  Blueberry = 'Blueberry',
+  Peach = 'Peach',
+  Apricot = 'Apricot',
+  Cherry = 'Cherry',
+  Banana = 'Banana',
+  Pineapple = 'Pineapple',
+  Mango = 'Mango',
+  Watermelon = 'Watermelon',
+  Apple = 'Apple',
+  Pear = 'Pear',
+  Pomegranate = 'Pomegranate',
+  Fig = 'Fig',
+  Cranberry = 'Cranberry',
+  Raisins = 'Raisins',
+}
+
 export enum Grain {
   Barley = 'Κριθάρι',
   Rice = 'Ρύζι',
@@ -84,6 +135,20 @@ export enum Grain {
   Bread = 'Ψωμί',
   Pasta = 'Ζυμαρικά',
 }
+export enum GrainEN {
+  Barley = 'Barley',
+  Rice = 'Rice',
+  Corn = 'Corn',
+  Oats = 'Oats',
+  Quinoa = 'Quinoa',
+  Couscous = 'Couscous',
+  Amaranth = 'Amaranth',
+  Cereal = 'Cereal',
+  Flour = 'Flour',
+  Bread = 'Bread',
+  Pasta = 'Pasta',
+}
+
 export enum Dairy {
   FetaCheese = 'Φέτα',
   KefalotyriCheese = 'Κεφαλοτύρι',
@@ -97,6 +162,20 @@ export enum Dairy {
   Butter = 'Βούτυρο',
   Cream = 'Κρέμα Γάλακτος',
 }
+export enum DairyEN {
+  FetaCheese = 'Feta Cheese',
+  KefalotyriCheese = 'Kefalotyri Cheese',
+  MizithraCheese = 'Mizithra Cheese',
+  GravieraCheese = 'Graviera Cheese',
+  AnthotyroCheese = 'Anthotyro Cheese',
+  KasseriCheese = 'Kasseri Cheese',
+  GreekYogurt = 'Greek Yogurt',
+  Tzatziki = 'Tzatziki',
+  Milk = 'Milk',
+  Butter = 'Butter',
+  Cream = 'Heavy Cream',
+}
+
 export enum Meat {
   Lamb = 'Αρνί',
   Beef = 'Μοσχάρι',
@@ -120,6 +199,30 @@ export enum Meat {
   Shrimp = 'Γαρίδες',
   Mussels = 'Μύδια',
 }
+export enum MeatEN {
+  Lamb = 'Lamb',
+  Beef = 'Beef',
+  Pork = 'Pork',
+  Chicken = 'Chicken',
+  Veal = 'Veal',
+  Rabbit = 'Rabbit',
+  Goat = 'Goat',
+  Venison = 'Wild Boar',
+  Duck = 'Duck',
+  Quail = 'Quail',
+  Turkey = 'Turkey',
+  Octopus = 'Octopus',
+  Calamari = 'Calamari',
+  Sardines = 'Sardines',
+  Anchovies = 'Anchovies',
+  Mackerel = 'Mackerel',
+  Cod = 'Cod',
+  SeaBass = 'Sea Bass',
+  Tuna = 'Tuna',
+  Shrimp = 'Shrimp',
+  Mussels = 'Mussels',
+}
+
 export enum Lipid {
   OliveOil = 'Λάδι Ελιάς',
   VegetableOil = 'Λάδι Φυτικό',
@@ -129,6 +232,16 @@ export enum Lipid {
   ClarifiedButter = 'Καθαρισμένο Βούτυρο (Γκι)',
   Tahini = 'Ταχίνι',
 }
+export enum LipidEN {
+  OliveOil = 'Olive Oil',
+  VegetableOil = 'Vegetable Oil',
+  SunflowerOil = 'Sunflower Oil',
+  SesameOil = 'Sesame Oil',
+  Butter = 'Butter',
+  ClarifiedButter = 'Clarified Butter (Ghee)',
+  Tahini = 'Tahini',
+}
+
 export enum Legumes {
   Lentils = 'Φακές',
   Chickpeas = 'Ρεβύθια',
@@ -140,9 +253,27 @@ export enum Legumes {
   YellowSplitPeas = 'Φακή Κίτρινη Χωριστή',
   Cowpeas = 'Κουρκουτιά',
 }
+export enum LegumesEN {
+  Lentils = 'Lentils',
+  Chickpeas = 'Chickpeas',
+  FavaBeans = 'Fava Beans',
+  BlackEyedPeas = 'Black-Eyed Peas',
+  WhiteBeans = 'White Beans',
+  GigantesBeans = 'Gigantes Beans',
+  GreenPeas = 'Green Peas',
+  YellowSplitPeas = 'Yellow Split Peas',
+  Cowpeas = 'Cowpeas',
+}
+
 export enum Pastry {
   Sugar = 'Ζάχαρη',
   Honey = 'Μέλι',
   Chocolate = 'Σοκολάτα',
   Truffles = 'Τρούφες',
+}
+export enum PastryEN {
+  Sugar = 'Sugar',
+  Honey = 'Honey',
+  Chocolate = 'Chocolate',
+  Truffles = 'Truffles',
 }

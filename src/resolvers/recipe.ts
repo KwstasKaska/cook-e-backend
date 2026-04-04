@@ -7,7 +7,7 @@ import {
   Resolver,
   UseMiddleware,
 } from 'type-graphql';
-import { Recipe } from '../entities/Chef/Recipe';
+import { Recipe, RecipeCategory } from '../entities/Chef/Recipe';
 import { RecipeIngredient } from '../entities/Chef/RecipeIngredient';
 import { Step } from '../entities/Chef/Step';
 import { Utensil } from '../entities/Chef/Utensil';
@@ -24,6 +24,7 @@ import {
   validateUpdateRecipe,
 } from '../utils/validateRecipe';
 import { In } from 'typeorm';
+import { translateText } from '../utils/translate';
 
 @Resolver(Recipe)
 export class RecipeResolver {
@@ -53,7 +54,19 @@ export class RecipeResolver {
     });
   }
 
-  //  Chef Queries
+  // Filter all public recipes by category — used by the UI tabs
+  @Query(() => [Recipe])
+  async recipesByCategory(
+    @Arg('category', () => RecipeCategory) category: RecipeCategory,
+  ): Promise<Recipe[]> {
+    return Recipe.find({
+      where: { category },
+      relations: ['author', 'author.user'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // Chef Queries
 
   @Query(() => [Recipe])
   @UseMiddleware(isAuth, isChef)
@@ -79,7 +92,35 @@ export class RecipeResolver {
     });
   }
 
-  //  Chef Mutations
+  // Chef's own recipes filtered by category
+  @Query(() => [Recipe])
+  @UseMiddleware(isAuth, isChef)
+  async myRecipesByCategory(
+    @Arg('category', () => RecipeCategory) category: RecipeCategory,
+    @Ctx() { req }: MyContext,
+  ): Promise<Recipe[]> {
+    const chefProfile = await ChefProfile.findOne({
+      where: { user: { id: req.session.userId } },
+    });
+
+    if (!chefProfile) {
+      throw new Error('Δεν βρέθηκε προφίλ μάγειρα.');
+    }
+
+    return Recipe.find({
+      where: { authorId: chefProfile.id, category },
+      relations: [
+        'recipeIngredients',
+        'recipeIngredients.ingredient',
+        'recipeIngredients.ingredient.category',
+        'steps',
+        'utensils',
+      ],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // ── Chef Mutations ─────────────────────────────────────────────────
 
   @Mutation(() => RecipeResponse)
   @UseMiddleware(isAuth, isChef)
@@ -100,26 +141,42 @@ export class RecipeResolver {
       };
     }
 
+    const [title_en, description_en, chefComment_en] = await Promise.all([
+      translateText(data.title),
+      data.description
+        ? translateText(data.description)
+        : Promise.resolve(undefined),
+      data.chefComment
+        ? translateText(data.chefComment)
+        : Promise.resolve(undefined),
+    ]);
+
     return await AppDataSource.transaction(async (manager) => {
-      // 1. Create the recipe
+      // 1. Create recipe
       const recipe = manager.create(Recipe, {
-        title: data.title,
-        description: data.description,
-        chefComment: data.chefComment,
+        title_el: data.title,
+        title_en,
+        description_el: data.description,
+        description_en,
+        chefComment_el: data.chefComment,
+        chefComment_en,
         recipeImage: data.recipeImage,
         difficulty: data.difficulty,
         prepTime: data.prepTime,
         cookTime: data.cookTime,
         restTime: data.restTime,
         foodEthnicity: data.foodEthnicity,
-        foodEvent: data.foodEvent,
+        category: data.category,
         caloriesTotal: data.caloriesTotal,
+        protein: data.protein,
+        carbs: data.carbs,
+        fat: data.fat,
         author: chefProfile,
       });
 
       await manager.save(recipe);
 
-      // 2. Create RecipeIngredient join rows
+      // 2. Insert RecipeIngredient rows — use insert() for composite PK
       for (const ing of data.ingredients) {
         const ingredient = await manager.findOne(Ingredient, {
           where: { id: ing.ingredientId },
@@ -129,20 +186,23 @@ export class RecipeResolver {
           throw new Error(`Το υλικό με id ${ing.ingredientId} δεν βρέθηκε.`);
         }
 
-        const recipeIngredient = manager.create(RecipeIngredient, {
+        await manager.insert(RecipeIngredient, {
           recipeId: recipe.id,
           ingredientId: ing.ingredientId,
           quantity: ing.quantity,
           unit: ing.unit,
         });
-
-        await manager.save(recipeIngredient);
       }
 
-      // 3. Create steps
-      for (const s of data.steps) {
+      // 3. Create steps — translate all bodies in parallel
+      const stepTranslations = await Promise.all(
+        data.steps.map((s) => translateText(s.body)),
+      );
+
+      for (let i = 0; i < data.steps.length; i++) {
         const step = manager.create(Step, {
-          body: s.body,
+          body_el: data.steps[i].body,
+          body_en: stepTranslations[i],
           recipeID: recipe.id,
         });
         await manager.save(step);
@@ -221,11 +281,30 @@ export class RecipeResolver {
       };
     }
 
+    const [title_en, description_en, chefComment_en] = await Promise.all([
+      data.title ? translateText(data.title) : Promise.resolve(undefined),
+      data.description
+        ? translateText(data.description)
+        : Promise.resolve(undefined),
+      data.chefComment
+        ? translateText(data.chefComment)
+        : Promise.resolve(undefined),
+    ]);
+
     return await AppDataSource.transaction(async (manager) => {
       // 1. Update scalar fields
-      if (data.title !== undefined) recipe.title = data.title;
-      if (data.description !== undefined) recipe.description = data.description;
-      if (data.chefComment !== undefined) recipe.chefComment = data.chefComment;
+      if (data.title !== undefined) {
+        recipe.title_el = data.title;
+        recipe.title_en = title_en!;
+      }
+      if (data.description !== undefined) {
+        recipe.description_el = data.description;
+        recipe.description_en = description_en;
+      }
+      if (data.chefComment !== undefined) {
+        recipe.chefComment_el = data.chefComment;
+        recipe.chefComment_en = chefComment_en;
+      }
       if (data.recipeImage !== undefined) recipe.recipeImage = data.recipeImage;
       if (data.difficulty !== undefined) recipe.difficulty = data.difficulty;
       if (data.prepTime !== undefined) recipe.prepTime = data.prepTime;
@@ -233,9 +312,12 @@ export class RecipeResolver {
       if (data.restTime !== undefined) recipe.restTime = data.restTime;
       if (data.foodEthnicity !== undefined)
         recipe.foodEthnicity = data.foodEthnicity;
-      if (data.foodEvent !== undefined) recipe.foodEvent = data.foodEvent;
+      if (data.category !== undefined) recipe.category = data.category;
       if (data.caloriesTotal !== undefined)
         recipe.caloriesTotal = data.caloriesTotal;
+      if (data.protein !== undefined) recipe.protein = data.protein;
+      if (data.carbs !== undefined) recipe.carbs = data.carbs;
+      if (data.fat !== undefined) recipe.fat = data.fat;
 
       await manager.save(recipe);
 
@@ -252,14 +334,12 @@ export class RecipeResolver {
             throw new Error(`Το υλικό με id ${ing.ingredientId} δεν βρέθηκε.`);
           }
 
-          const recipeIngredient = manager.create(RecipeIngredient, {
+          await manager.insert(RecipeIngredient, {
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
             unit: ing.unit,
           });
-
-          await manager.save(recipeIngredient);
         }
       }
 
@@ -267,9 +347,14 @@ export class RecipeResolver {
       if (data.steps !== undefined) {
         await manager.delete(Step, { recipeID: recipe.id });
 
-        for (const s of data.steps) {
+        const stepTranslations = await Promise.all(
+          data.steps.map((s) => translateText(s.body)),
+        );
+
+        for (let i = 0; i < data.steps.length; i++) {
           const step = manager.create(Step, {
-            body: s.body,
+            body_el: data.steps[i].body,
+            body_en: stepTranslations[i],
             recipeID: recipe.id,
           });
           await manager.save(step);

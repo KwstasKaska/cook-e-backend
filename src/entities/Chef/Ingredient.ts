@@ -19,9 +19,13 @@ export class Ingredient extends BaseEntity {
 
   @Field(() => String)
   @Column({ unique: true })
-  name!: string;
+  name_el!: string;
 
-  @Field(() => Float, { nullable: true, description: 'Θερμίδες ανά 100g' })
+  @Field(() => String)
+  @Column({ unique: true })
+  name_en!: string;
+
+  @Field(() => Float, { nullable: true })
   @Column({ type: 'float', nullable: true })
   caloriesPer100g?: number;
 
@@ -31,7 +35,7 @@ export class Ingredient extends BaseEntity {
 
   @ManyToOne(
     () => IngredientsCategory,
-    (ingredientCategory) => ingredientCategory.ingredients
+    (ingredientCategory) => ingredientCategory.ingredients,
   )
   category: IngredientsCategory;
 }

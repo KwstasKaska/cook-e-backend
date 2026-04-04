@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../User/User';
 import { Recipe } from './Recipe';
+import { ChefRating } from '../General/ChefRating';
 
 @ObjectType()
 @Entity()
@@ -23,4 +24,7 @@ export class ChefProfile extends BaseEntity {
 
   @OneToMany(() => Recipe, (recipe) => recipe.author)
   recipes: Recipe[];
+
+  @OneToMany(() => ChefRating, (rating) => rating.chef)
+  ratings: ChefRating[];
 }

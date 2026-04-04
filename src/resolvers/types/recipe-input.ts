@@ -1,21 +1,17 @@
-import { InputType, Field, Int } from 'type-graphql';
-import { Difficulty } from '../../entities/Chef/Recipe';
-
-//Ingredient line inside a recipe
+import { Field, Float, InputType, Int } from 'type-graphql';
+import { Difficulty, RecipeCategory } from '../../entities/Chef/Recipe';
 
 @InputType()
 export class RecipeIngredientInput {
   @Field(() => Int)
   ingredientId: number;
 
-  @Field(() => Int)
-  quantity: number;
+  @Field(() => String)
+  quantity: string;
 
-  @Field(() => String, { nullable: true })
-  unit?: string;
+  @Field(() => String)
+  unit: string;
 }
-
-//Step line inside a recipe
 
 @InputType()
 export class RecipeStepInput {
@@ -23,9 +19,7 @@ export class RecipeStepInput {
   body: string;
 }
 
-//Create
-
-@InputType({ description: 'Create Recipe Data' })
+@InputType()
 export class CreateRecipeInput {
   @Field(() => String)
   title: string;
@@ -54,13 +48,25 @@ export class CreateRecipeInput {
   @Field(() => String, { nullable: true })
   foodEthnicity?: string;
 
-  @Field(() => String, { nullable: true })
-  foodEvent?: string;
+  @Field(() => RecipeCategory, { nullable: true })
+  category?: RecipeCategory;
 
-  @Field(() => Int, { nullable: true })
+  // ── Macros ─────────────────────────────────────────────────────────
+
+  @Field(() => Float, { nullable: true })
   caloriesTotal?: number;
 
-  // Relation arrays
+  @Field(() => Float, { nullable: true })
+  protein?: number;
+
+  @Field(() => Float, { nullable: true })
+  carbs?: number;
+
+  @Field(() => Float, { nullable: true })
+  fat?: number;
+
+  // ── Relations ──────────────────────────────────────────────────────
+
   @Field(() => [RecipeIngredientInput])
   ingredients: RecipeIngredientInput[];
 
@@ -71,9 +77,7 @@ export class CreateRecipeInput {
   utensilIds?: number[];
 }
 
-//Update
-
-@InputType({ description: 'Update Recipe Data' })
+@InputType()
 export class UpdateRecipeInput {
   @Field(() => Int)
   id: number;
@@ -105,13 +109,25 @@ export class UpdateRecipeInput {
   @Field(() => String, { nullable: true })
   foodEthnicity?: string;
 
-  @Field(() => String, { nullable: true })
-  foodEvent?: string;
+  @Field(() => RecipeCategory, { nullable: true })
+  category?: RecipeCategory;
 
-  @Field(() => Int, { nullable: true })
+  // ── Macros ─────────────────────────────────────────────────────────
+
+  @Field(() => Float, { nullable: true })
   caloriesTotal?: number;
 
-  // When provided, the existing ingredients/steps/utensils are replaced entirely
+  @Field(() => Float, { nullable: true })
+  protein?: number;
+
+  @Field(() => Float, { nullable: true })
+  carbs?: number;
+
+  @Field(() => Float, { nullable: true })
+  fat?: number;
+
+  // ── Relations ──────────────────────────────────────────────────────
+
   @Field(() => [RecipeIngredientInput], { nullable: true })
   ingredients?: RecipeIngredientInput[];
 

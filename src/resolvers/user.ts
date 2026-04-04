@@ -25,6 +25,10 @@ import { isUser } from '../middleware/isUser';
 import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfile';
 import { MealScheduler } from '../entities/Nutritionist/MealScheduler';
 import { ChefProfile } from '../entities/Chef/ChefProfile';
+import { createWriteStream } from 'fs';
+import { GraphQLUpload, FileUpload } from 'graphql-upload-minimal';
+import path from 'path';
+import { UpdateUserInput } from './types/update-user-input';
 
 @Resolver(User)
 export class UserResolver {
@@ -42,7 +46,7 @@ export class UserResolver {
   async changePassword(
     @Arg('token') token: string,
     @Arg('newPassword') newPassword: string,
-    @Ctx() { redis, req }: MyContext
+    @Ctx() { redis, req }: MyContext,
   ): Promise<UserResponse> {
     if (
       !newPassword.match(/[A-Z]/) &&
@@ -100,7 +104,7 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
-    @Ctx() { redis }: MyContext
+    @Ctx() { redis }: MyContext,
   ) {
     const user = await User.findOne({ where: { email } });
     if (!user) {
@@ -113,12 +117,12 @@ export class UserResolver {
       'forget-password:' + token,
       user.id,
       'EX',
-      60 * 60 * 24 * 3 //3 days
+      60 * 60 * 24 * 3, //3 days
     );
 
     await sendEmail(
       email,
-      `<a  href="http://localhost:3000/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`
+      `<a  href="http://localhost:3000/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`,
     );
     return true;
   }
@@ -139,7 +143,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async register(
     @Arg('options') options: RegisterUserInput,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
     const errors = validateRegister(options);
     if (errors) {
@@ -210,12 +214,12 @@ export class UserResolver {
   async login(
     @Arg('usernameOrEmail') usernameOrEmail: string,
     @Arg('password') password: string,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
     const user = await User.findOne(
       usernameOrEmail.includes('@')
         ? { where: { email: usernameOrEmail } }
-        : { where: { username: usernameOrEmail } }
+        : { where: { username: usernameOrEmail } },
     );
     if (!user) {
       return {
@@ -256,14 +260,14 @@ export class UserResolver {
           return;
         }
         resolve(true);
-      })
+      }),
     );
   }
 
   @Query(() => [AppointmentRequest])
   @UseMiddleware(isAuth, isUser)
   async myAppointmentRequests(
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<AppointmentRequest[]> {
     return AppointmentRequest.find({
       where: { clientId: req.session.userId },
@@ -272,21 +276,111 @@ export class UserResolver {
     });
   }
 
-  // για να βλέπει ο χρήστης τα δικά του πλάνα
-  @FieldResolver(() => [MealScheduler])
-  @UseMiddleware(isAuth)
-  async userMealPlans(
-    @Root() user: User,
-    @Ctx() { req }: MyContext
-  ): Promise<MealScheduler[]> {
-    if (req.session.userId !== user.id) {
-      throw new Error('Δεν έχετε δικαίωμα πρόσβασης σε αυτά τα δεδομένα');
+  @Query(() => [MealScheduler])
+  @UseMiddleware(isAuth, isUser)
+  async myNutritionPlans(@Ctx() { req }: MyContext): Promise<MealScheduler[]> {
+    return MealScheduler.find({
+      where: { user: { id: req.session.userId } },
+      relations: ['nutritionist', 'nutritionist.user'],
+      order: { day: 'ASC', mealType: 'ASC' },
+    });
+  }
+
+  @Mutation(() => UserResponse)
+  @UseMiddleware(isAuth, isUser)
+  async updateUser(
+    @Arg('data') data: UpdateUserInput,
+    @Ctx() { req }: MyContext,
+  ): Promise<UserResponse> {
+    const user = await User.findOne({ where: { id: req.session.userId } });
+    if (!user) {
+      return { errors: [{ field: 'user', message: 'Ο χρήστης δεν βρέθηκε.' }] };
     }
 
-    return MealScheduler.find({
-      where: { user: { id: user.id } },
-      relations: ['nutritionist'],
-      order: { day: 'ASC', mealType: 'ASC' },
+    // Password change — requires current password verification
+    if (data.newPassword) {
+      if (!data.currentPassword) {
+        return {
+          errors: [
+            {
+              field: 'currentPassword',
+              message: 'Παρακαλώ εισάγετε τον τρέχοντα κωδικό σας.',
+            },
+          ],
+        };
+      }
+      const valid = await argon2.verify(user.password, data.currentPassword);
+      if (!valid) {
+        return {
+          errors: [
+            {
+              field: 'currentPassword',
+              message: 'Λανθασμένος τρέχων κωδικός.',
+            },
+          ],
+        };
+      }
+      user.password = await argon2.hash(data.newPassword);
+    }
+
+    if (data.username) user.username = data.username;
+    if (data.email) user.email = data.email;
+    if (data.phoneNumber) user.phoneNumber = data.phoneNumber;
+
+    try {
+      await user.save();
+    } catch (err) {
+      if (err.code === '23505') {
+        if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
+          return {
+            errors: [
+              {
+                field: 'username',
+                message: 'Το όνομα χρησιμοποιείται από άλλον χρήστη.',
+              },
+            ],
+          };
+        }
+        if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
+          return {
+            errors: [
+              {
+                field: 'email',
+                message: 'Το email χρησιμοποιείται από άλλον χρήστη.',
+              },
+            ],
+          };
+        }
+      }
+    }
+
+    return { user };
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth, isUser)
+  async updateUserImage(
+    @Arg('picture', () => GraphQLUpload) picture: FileUpload,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    const user = await User.findOne({ where: { id: req.session.userId } });
+    if (!user) return false;
+
+    const { createReadStream, filename } = picture;
+    const imagePath = path.join(__dirname, `../../public/images/${filename}`);
+
+    return new Promise((resolve, reject) => {
+      createReadStream()
+        .pipe(createWriteStream(imagePath))
+        .on('finish', async () => {
+          user.image = `http://localhost:4000/images/${filename}`;
+          await user.save();
+          resolve(true);
+        })
+        .on('error', (error) => {
+          console.error('Error writing file:', error);
+          reject(false);
+        });
     });
   }
 }

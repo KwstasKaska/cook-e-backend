@@ -13,17 +13,29 @@ import { User } from '../User/User';
 @ObjectType()
 @Entity()
 export class Article extends BaseEntity {
-  @Field() //Typegraphql decorator that helps us declare wich class properties should be mapped to the GraphQL fields
-  @PrimaryGeneratedColumn() //TypeORM Entity column in order to create the table in my database
+  @Field()
+  @PrimaryGeneratedColumn()
   id!: number;
+
+  // ── Translatable fields ────────────────────────────────────────────
 
   @Field(() => String)
   @Column()
-  title!: string;
+  title_el!: string;
+
+  @Field(() => String)
+  @Column()
+  title_en!: string;
 
   @Field(() => String)
   @Column({ type: 'text' })
-  text!: string;
+  text_el!: string;
+
+  @Field(() => String)
+  @Column({ type: 'text' })
+  text_en!: string;
+
+  // ── Non-translatable fields
 
   @Field(() => String)
   @Column()

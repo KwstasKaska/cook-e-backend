@@ -4,7 +4,7 @@ import { DayOfWeek, MealType } from '../../entities/Nutritionist/MealScheduler';
 @InputType()
 export class UpdateMealSchedulerInput {
   @Field()
-  id!: number; // το primary key του meal scheduler που θέλουμε να αλλάξουμε
+  id!: number;
 
   @Field(() => DayOfWeek, { nullable: true })
   day?: DayOfWeek;
@@ -12,6 +12,7 @@ export class UpdateMealSchedulerInput {
   @Field(() => MealType, { nullable: true })
   mealType?: MealType;
 
+  // When provided, resolver re-translates to fill comment_en
   @Field({ nullable: true })
   comment?: string;
 }

@@ -17,7 +17,11 @@ export class IngredientsCategory extends BaseEntity {
 
   @Field(() => String)
   @Column({ unique: true })
-  name!: string;
+  name_el!: string;
+
+  @Field(() => String)
+  @Column({ unique: true })
+  name_en!: string;
 
   @OneToMany(() => Ingredient, (ingredient) => ingredient.category)
   ingredients: Ingredient[];

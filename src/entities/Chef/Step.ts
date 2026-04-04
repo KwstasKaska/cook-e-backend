@@ -17,11 +17,20 @@ export class Step extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  // ── Translatable fields ────────────────────────────────────────────
+
   @Field(() => String)
   @Column({ type: 'text' })
-  body: string;
+  body_el: string;
 
-  /* Στης προκειμένη αυτή η στήλη χρησιμοποιείται σαν μερικό(foreign) κλειδί καθώς πρέπει να υπάρξει συσχέτιση με την οντότητα Recipe */
+  @Field(() => String)
+  @Column({ type: 'text' })
+  body_en: string;
+
+  // ── Non-translatable fields ────────────────────────────────────────
+
+  /* Αυτή η στήλη χρησιμοποιείται σαν μερικό (foreign) κλειδί —
+     συσχέτιση με την οντότητα Recipe */
   @Field()
   @Column()
   recipeID: number;
