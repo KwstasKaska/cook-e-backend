@@ -8,9 +8,14 @@ import { MyContext } from '../types';
 export class ChefProfileResolver {
   // All chefs — public
   @Query(() => [ChefProfile])
-  async chefs(): Promise<ChefProfile[]> {
+  async chefs(
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<ChefProfile[]> {
     return ChefProfile.find({
       relations: ['user'],
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 

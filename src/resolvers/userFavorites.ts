@@ -15,10 +15,13 @@ import { MyContext } from '../types';
 
 @Resolver(UserFavorite)
 export class FavoritesResolver {
-  // All recipes the logged-in user has saved
   @Query(() => [UserFavorite])
   @UseMiddleware(isAuth, isUser)
-  async myFavorites(@Ctx() { req }: MyContext): Promise<UserFavorite[]> {
+  async myFavorites(
+    @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<UserFavorite[]> {
     return UserFavorite.find({
       where: { userId: req.session.userId },
       relations: [
@@ -29,10 +32,11 @@ export class FavoritesResolver {
         'recipe.recipeIngredients.ingredient',
       ],
       order: { savedAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
-  // Save a recipe
   @Mutation(() => UserFavorite)
   @UseMiddleware(isAuth, isUser)
   async saveRecipe(
@@ -44,7 +48,6 @@ export class FavoritesResolver {
       throw new Error('Η συνταγή δεν βρέθηκε.');
     }
 
-    // Already saved — return existing entry idempotently
     const existing = await UserFavorite.findOne({
       where: { userId: req.session.userId, recipeId },
     });
@@ -57,7 +60,6 @@ export class FavoritesResolver {
     }).save();
   }
 
-  // Unsave a recipe
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isUser)
   async unsaveRecipe(
@@ -74,8 +76,6 @@ export class FavoritesResolver {
     return true;
   }
 
-  // Check if the logged-in user has saved a specific recipe
-  // Useful for toggling the heart icon on the frontend
   @Query(() => Boolean)
   @UseMiddleware(isAuth, isUser)
   async isFavorited(

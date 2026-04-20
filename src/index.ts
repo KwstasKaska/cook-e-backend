@@ -33,6 +33,7 @@ import { MessagingResolver } from './resolvers/messaging';
 import { RatingResolver } from './resolvers/ratings';
 import { FavoritesResolver } from './resolvers/userFavorites';
 import { CookedRecipeResolver } from './resolvers/cookedRecipe';
+import { RecipeSuggestionResolver } from './resolvers/recipeSuggestion';
 
 const main = async () => {
   // In order to interact with the database and hold my db connection settings, i have to initialize dataSource
@@ -95,6 +96,7 @@ const main = async () => {
         FavoritesResolver,
         RatingResolver,
         CookedRecipeResolver,
+        RecipeSuggestionResolver,
       ],
       validate: false,
     }),

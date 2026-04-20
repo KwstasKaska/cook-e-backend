@@ -21,19 +21,21 @@ import AppDataSource from '../app-data-source';
 export class RatingResolver {
   // ── Chef ratings ───────────────────────────────────────────────────
 
-  // All ratings for a chef — public
   @Query(() => [ChefRating])
   async chefRatings(
     @Arg('chefId', () => Int) chefId: number,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<ChefRating[]> {
     return ChefRating.find({
       where: { chefId },
       relations: ['user'],
       order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
-  // Average rating for a chef — public
   @Query(() => Float, { nullable: true })
   async chefAverageRating(
     @Arg('chefId', () => Int) chefId: number,
@@ -45,7 +47,6 @@ export class RatingResolver {
     return result[0]?.avg ?? null;
   }
 
-  // Rate a chef — creates or updates the user's existing rating
   @Mutation(() => ChefRating)
   @UseMiddleware(isAuth, isUser)
   async rateChef(
@@ -59,9 +60,7 @@ export class RatingResolver {
     }
 
     const chef = await ChefProfile.findOne({ where: { id: chefId } });
-    if (!chef) {
-      throw new Error('Ο μάγειρας δεν βρέθηκε.');
-    }
+    if (!chef) throw new Error('Ο μάγειρας δεν βρέθηκε.');
 
     const existing = await ChefRating.findOne({
       where: { userId: req.session.userId, chefId },
@@ -81,7 +80,6 @@ export class RatingResolver {
     }).save();
   }
 
-  // Delete the logged-in user's rating for a chef
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isUser)
   async deleteChefRating(
@@ -98,21 +96,34 @@ export class RatingResolver {
     return true;
   }
 
+  @Query(() => ChefRating, { nullable: true })
+  @UseMiddleware(isAuth)
+  async myChefRating(
+    @Arg('chefId', () => Int) chefId: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<ChefRating | null> {
+    return ChefRating.findOne({
+      where: { userId: req.session.userId, chefId },
+    });
+  }
+
   // ── Recipe ratings ─────────────────────────────────────────────────
 
-  // All ratings for a recipe — public
   @Query(() => [RecipeRating])
   async recipeRatings(
     @Arg('recipeId', () => Int) recipeId: number,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<RecipeRating[]> {
     return RecipeRating.find({
       where: { recipeId },
       relations: ['user'],
       order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
-  // Average rating for a recipe — public
   @Query(() => Float, { nullable: true })
   async recipeAverageRating(
     @Arg('recipeId', () => Int) recipeId: number,
@@ -124,7 +135,6 @@ export class RatingResolver {
     return result[0]?.avg ?? null;
   }
 
-  // Rate a recipe — creates or updates the user's existing rating
   @Mutation(() => RecipeRating)
   @UseMiddleware(isAuth, isUser)
   async rateRecipe(
@@ -138,9 +148,7 @@ export class RatingResolver {
     }
 
     const recipe = await Recipe.findOne({ where: { id: recipeId } });
-    if (!recipe) {
-      throw new Error('Η συνταγή δεν βρέθηκε.');
-    }
+    if (!recipe) throw new Error('Η συνταγή δεν βρέθηκε.');
 
     const existing = await RecipeRating.findOne({
       where: { userId: req.session.userId, recipeId },
@@ -160,7 +168,6 @@ export class RatingResolver {
     }).save();
   }
 
-  // Delete the logged-in user's rating for a recipe
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isUser)
   async deleteRecipeRating(
@@ -177,21 +184,8 @@ export class RatingResolver {
     return true;
   }
 
-  // The logged-in user's own rating for a chef — useful for pre-filling the UI
-  @Query(() => ChefRating, { nullable: true })
-  @UseMiddleware(isAuth, isUser)
-  async myChefRating(
-    @Arg('chefId', () => Int) chefId: number,
-    @Ctx() { req }: MyContext,
-  ): Promise<ChefRating | null> {
-    return ChefRating.findOne({
-      where: { userId: req.session.userId, chefId },
-    });
-  }
-
-  // The logged-in user's own rating for a recipe
   @Query(() => RecipeRating, { nullable: true })
-  @UseMiddleware(isAuth, isUser)
+  @UseMiddleware(isAuth)
   async myRecipeRating(
     @Arg('recipeId', () => Int) recipeId: number,
     @Ctx() { req }: MyContext,

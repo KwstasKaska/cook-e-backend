@@ -8,9 +8,14 @@ import { MyContext } from '../types';
 export class NutritionistProfileResolver {
   // All nutritionists — public
   @Query(() => [NutritionistProfile])
-  async nutritionists(): Promise<NutritionistProfile[]> {
+  async nutritionists(
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<NutritionistProfile[]> {
     return NutritionistProfile.find({
       relations: ['user'],
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 

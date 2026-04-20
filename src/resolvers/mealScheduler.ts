@@ -31,6 +31,8 @@ export class NutritionPlanResolver {
   @UseMiddleware(isAuth, isNutr)
   async getNutritionistMealPlans(
     @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 20 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<MealScheduler[]> {
     const nutritionist = await NutritionistProfile.findOne({
       where: { user: { id: req.session.userId } },
@@ -44,6 +46,8 @@ export class NutritionPlanResolver {
       where: { nutritionist: { id: nutritionist.id } },
       relations: ['user', 'nutritionist'],
       order: { day: 'ASC', mealType: 'ASC' },
+      take: Math.min(limit, 100),
+      skip: offset,
     });
   }
 
@@ -80,10 +84,6 @@ export class NutritionPlanResolver {
         };
       }
 
-      // ── Approved-user guard ──────────────────────────────────────────
-      // A nutritionist can only create a meal plan for a user who has
-      // an accepted appointment request with them. This ensures the
-      // nutritionist-user relationship is established before planning.
       const approvedRequest = await AppointmentRequest.createQueryBuilder('req')
         .innerJoin('req.slot', 'slot')
         .where('req.clientId = :userId', { userId })
@@ -106,7 +106,6 @@ export class NutritionPlanResolver {
           ],
         };
       }
-      // ────────────────────────────────────────────────────────────────
 
       const existing = await MealScheduler.findOne({
         where: { user: { id: userId }, day, mealType },

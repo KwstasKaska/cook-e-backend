@@ -18,6 +18,7 @@ export class ChefProfile extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Field(() => User)
   @OneToOne(() => User)
   @JoinColumn()
   user: User;

@@ -28,20 +28,27 @@ export class ArticleResolver {
   //  Public Queries
 
   @Query(() => [Article])
-  async articles(): Promise<Article[]> {
+  async articles(
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<Article[]> {
     return AppDataSource.query(
       `SELECT a.*,
         json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
        FROM article a
        INNER JOIN public.user u ON u.id = a."creatorId"
        WHERE u.role = 'nutritionist'
-       ORDER BY a."createdAt" DESC`,
+       ORDER BY a."createdAt" DESC
+       LIMIT $1 OFFSET $2`,
+      [Math.min(limit, 50), offset],
     );
   }
 
   @Query(() => [Article])
   async articlesByNutritionist(
     @Arg('nutritionistId', () => Int) nutritionistId: number,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Article[]> {
     return AppDataSource.query(
       `SELECT a.*,
@@ -49,26 +56,34 @@ export class ArticleResolver {
        FROM article a
        INNER JOIN public.user u ON u.id = a."creatorId"
        WHERE u.role = 'nutritionist' AND u.id = $1
-       ORDER BY a."createdAt" DESC`,
-      [nutritionistId],
+       ORDER BY a."createdAt" DESC
+       LIMIT $2 OFFSET $3`,
+      [nutritionistId, Math.min(limit, 50), offset],
     );
   }
 
   @Query(() => [Article])
-  async chefArticles(): Promise<Article[]> {
+  async chefArticles(
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<Article[]> {
     return AppDataSource.query(
       `SELECT a.*,
         json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
        FROM article a
        INNER JOIN public.user u ON u.id = a."creatorId"
        WHERE u.role = 'chef'
-       ORDER BY a."createdAt" DESC`,
+       ORDER BY a."createdAt" DESC
+       LIMIT $1 OFFSET $2`,
+      [Math.min(limit, 50), offset],
     );
   }
 
   @Query(() => [Article])
   async articlesByChef(
     @Arg('chefId', () => Int) chefId: number,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Article[]> {
     return AppDataSource.query(
       `SELECT a.*,
@@ -76,8 +91,9 @@ export class ArticleResolver {
        FROM article a
        INNER JOIN public.user u ON u.id = a."creatorId"
        WHERE u.role = 'chef' AND u.id = $1
-       ORDER BY a."createdAt" DESC`,
-      [chefId],
+       ORDER BY a."createdAt" DESC
+       LIMIT $2 OFFSET $3`,
+      [chefId, Math.min(limit, 50), offset],
     );
   }
 
@@ -90,22 +106,27 @@ export class ArticleResolver {
 
   @Query(() => [Article])
   @UseMiddleware(isAuth, isNutr)
-  async myArticles(@Ctx() { req }: MyContext): Promise<Article[]> {
+  async myArticles(
+    @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<Article[]> {
     return AppDataSource.query(
       `SELECT a.*,
         json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
        FROM article a
        INNER JOIN public.user u ON u.id = a."creatorId"
        WHERE u.role = 'nutritionist' AND u.id = $1
-       ORDER BY a."createdAt" DESC`,
-      [req.session.userId],
+       ORDER BY a."createdAt" DESC
+       LIMIT $2 OFFSET $3`,
+      [req.session.userId, Math.min(limit, 50), offset],
     );
   }
 
   // Mutations
 
   @Mutation(() => ArticleResponse)
-  @UseMiddleware(isAuth, isNutr)
+  @UseMiddleware(isAuth)
   async createArticle(
     @Arg('data') data: AddArticleInput,
     @Arg('picture', () => GraphQLUpload) picture: FileUpload,
@@ -114,7 +135,6 @@ export class ArticleResolver {
     const errors = validateArticle(data);
     if (errors) return { errors };
 
-    // Translate title and text from Greek to English before saving
     const [title_en, text_en] = await Promise.all([
       translateText(data.title),
       translateText(data.text),
@@ -145,7 +165,7 @@ export class ArticleResolver {
   }
 
   @Mutation(() => ArticleResponse)
-  @UseMiddleware(isAuth, isNutr)
+  @UseMiddleware(isAuth)
   async updateArticle(
     @Arg('data') data: UpdateArticleInput,
     @Arg('picture', () => GraphQLUpload, { nullable: true })
@@ -155,7 +175,6 @@ export class ArticleResolver {
     const errors = validateUpdateArticle(data);
     if (errors) return { errors };
 
-    // Only translate fields that were actually provided
     const [title_en, text_en] = await Promise.all([
       data.title ? translateText(data.title) : Promise.resolve(undefined),
       data.text ? translateText(data.text) : Promise.resolve(undefined),
@@ -203,7 +222,7 @@ export class ArticleResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(isAuth, isNutr)
+  @UseMiddleware(isAuth)
   async deleteArticle(
     @Arg('id', () => Int) id: number,
     @Ctx() { req }: MyContext,

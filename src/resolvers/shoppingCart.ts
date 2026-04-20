@@ -19,17 +19,22 @@ export class ShoppingCartResolver {
 
   @Query(() => [ShoppingCart])
   @UseMiddleware(isAuth, isUser)
-  async myCart(@Ctx() { req }: MyContext): Promise<ShoppingCart[]> {
+  async myCart(
+    @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 50 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<ShoppingCart[]> {
     return ShoppingCart.find({
       where: { userId: req.session.userId },
       relations: ['ingredient', 'ingredient.category'],
       order: { addedAt: 'DESC' },
+      take: Math.min(limit, 100),
+      skip: offset,
     });
   }
 
   // ── Mutations ──────────────────────────────────────────────────────
 
-  // Add a single ingredient to the cart (from predefined list or from a recipe)
   @Mutation(() => ShoppingCart)
   @UseMiddleware(isAuth, isUser)
   async addToCart(
@@ -46,7 +51,6 @@ export class ShoppingCartResolver {
       throw new Error('Το υλικό δεν βρέθηκε.');
     }
 
-    // If already in cart, update quantity/unit/note instead of duplicating
     const existing = await ShoppingCart.findOne({
       where: { userId: req.session.userId, ingredientId },
     });
@@ -67,8 +71,6 @@ export class ShoppingCartResolver {
     }).save();
   }
 
-  // Add multiple ingredients at once — used when user picks missing
-  // ingredients from a recipe's ingredient list
   @Mutation(() => [ShoppingCart])
   @UseMiddleware(isAuth, isUser)
   async addManyToCart(
@@ -81,7 +83,7 @@ export class ShoppingCartResolver {
       const ingredient = await Ingredient.findOne({
         where: { id: ingredientId },
       });
-      if (!ingredient) continue; // skip invalid ids silently
+      if (!ingredient) continue;
 
       const existing = await ShoppingCart.findOne({
         where: { userId: req.session.userId, ingredientId },
@@ -103,7 +105,6 @@ export class ShoppingCartResolver {
     return results;
   }
 
-  // Update quantity/unit/note on an existing cart item
   @Mutation(() => ShoppingCart)
   @UseMiddleware(isAuth, isUser)
   async updateCartItem(

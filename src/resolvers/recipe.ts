@@ -31,10 +31,15 @@ export class RecipeResolver {
   //  Public Queries
 
   @Query(() => [Recipe])
-  async recipes(): Promise<Recipe[]> {
+  async recipes(
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<Recipe[]> {
     return Recipe.find({
       relations: ['author', 'author.user'],
       order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
@@ -58,11 +63,15 @@ export class RecipeResolver {
   @Query(() => [Recipe])
   async recipesByCategory(
     @Arg('category', () => RecipeCategory) category: RecipeCategory,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Recipe[]> {
     return Recipe.find({
       where: { category },
       relations: ['author', 'author.user'],
       order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
@@ -70,7 +79,11 @@ export class RecipeResolver {
 
   @Query(() => [Recipe])
   @UseMiddleware(isAuth, isChef)
-  async myRecipes(@Ctx() { req }: MyContext): Promise<Recipe[]> {
+  async myRecipes(
+    @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<Recipe[]> {
     const chefProfile = await ChefProfile.findOne({
       where: { user: { id: req.session.userId } },
     });
@@ -89,6 +102,8 @@ export class RecipeResolver {
         'utensils',
       ],
       order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
@@ -98,6 +113,8 @@ export class RecipeResolver {
   async myRecipesByCategory(
     @Arg('category', () => RecipeCategory) category: RecipeCategory,
     @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Recipe[]> {
     const chefProfile = await ChefProfile.findOne({
       where: { user: { id: req.session.userId } },
@@ -117,6 +134,8 @@ export class RecipeResolver {
         'utensils',
       ],
       order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
@@ -292,7 +311,6 @@ export class RecipeResolver {
     ]);
 
     return await AppDataSource.transaction(async (manager) => {
-      // 1. Update scalar fields
       if (data.title !== undefined) {
         recipe.title_el = data.title;
         recipe.title_en = title_en!;
@@ -321,7 +339,6 @@ export class RecipeResolver {
 
       await manager.save(recipe);
 
-      // 2. Replace ingredients if provided
       if (data.ingredients !== undefined) {
         await manager.delete(RecipeIngredient, { recipeId: recipe.id });
 
@@ -343,7 +360,6 @@ export class RecipeResolver {
         }
       }
 
-      // 3. Replace steps if provided
       if (data.steps !== undefined) {
         await manager.delete(Step, { recipeID: recipe.id });
 
@@ -361,7 +377,6 @@ export class RecipeResolver {
         }
       }
 
-      // 4. Replace utensils if provided
       if (data.utensilIds !== undefined) {
         recipe.utensils =
           data.utensilIds.length > 0
@@ -370,7 +385,6 @@ export class RecipeResolver {
         await manager.save(recipe);
       }
 
-      // 5. Return with all relations loaded
       const fullRecipe = await manager.findOne(Recipe, {
         where: { id: recipe.id },
         relations: [

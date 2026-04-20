@@ -3,6 +3,7 @@ import {
   UseMiddleware,
   Arg,
   Ctx,
+  Int,
   Resolver,
   Query,
 } from 'type-graphql';
@@ -22,9 +23,8 @@ export class AppointmentRequestResolver {
   @UseMiddleware(isAuth, isUser)
   async requestAppointment(
     @Arg('data') data: AppointmentRequestInput,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<AppointmentRequestResponse> {
-    // 1. Έλεγχος αν το slot υπάρχει και είναι διαθέσιμο
     const slot = await Appointment.findOne({
       where: { id: data.slotId, isAvailable: true },
     });
@@ -40,7 +40,6 @@ export class AppointmentRequestResolver {
       };
     }
 
-    // 2. Έλεγχος αν ο χρήστης έχει ήδη κάνει αίτηση για αυτό το slot
     const existingRequest = await AppointmentRequest.findOne({
       where: { slotId: data.slotId, clientId: req.session.userId },
     });
@@ -56,7 +55,6 @@ export class AppointmentRequestResolver {
       };
     }
 
-    // 3. Δημιουργία της αίτησης
     const appointmentRequest = AppointmentRequest.create({
       slotId: data.slotId,
       clientId: req.session.userId,
@@ -84,7 +82,7 @@ export class AppointmentRequestResolver {
   @UseMiddleware(isAuth, isUser)
   async updateAppointmentRequest(
     @Arg('data') data: AppointmentRequestInput,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<AppointmentRequestResponse | null> {
     const appointmentRequest = await AppointmentRequest.findOne({
       where: { id: data.slotId, clientId: req.session.userId },
@@ -130,7 +128,7 @@ export class AppointmentRequestResolver {
   @UseMiddleware(isAuth, isUser)
   async deleteAppointmentRequest(
     @Arg('id') id: number,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
   ): Promise<boolean> {
     const appointmentRequest = await AppointmentRequest.findOne({
       where: { id, clientId: req.session.userId },
@@ -151,13 +149,12 @@ export class AppointmentRequestResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(isAuth, isNutr) // Μόνο διατροφολόγοι
+  @UseMiddleware(isAuth, isNutr)
   async respondToAppointmentRequest(
     @Arg('requestId') requestId: number,
-    @Arg('status', () => AppointmentStatus) status: AppointmentStatus, // accepted ή rejected
-    @Ctx() { req }: MyContext
+    @Arg('status', () => AppointmentStatus) status: AppointmentStatus,
+    @Ctx() { req }: MyContext,
   ): Promise<boolean> {
-    // Φορτώνουμε την αίτηση μαζί με το slot
     const request = await AppointmentRequest.createQueryBuilder('request')
       .leftJoinAndSelect('request.slot', 'slot')
       .where('request.id = :id', { id: requestId })
@@ -165,42 +162,51 @@ export class AppointmentRequestResolver {
 
     if (!request) return false;
 
-    // Έλεγχος ότι το slot ανήκει στον τρέχοντα διατροφολόγο (μέσω nutritionistId στο slot)
     if (request.slot.nutritionistId !== req.session.userId) {
       return false;
     }
 
-    // Ενημερώνουμε μόνο αν η αίτηση είναι σε εκκρεμότητα
     if (request.status !== AppointmentStatus.PENDING) {
       return false;
     }
 
-    // Ενημέρωση κατάστασης αίτησης
     request.status = status;
 
-    // Αν αποδεχτεί η αίτηση, κάνουμε το slot μη διαθέσιμο
     if (status === AppointmentStatus.ACCEPTED) {
       request.slot.isAvailable = false;
       await request.slot.save();
     }
 
     await request.save();
-
     return true;
   }
 
   @Query(() => [AppointmentRequest])
-  @UseMiddleware(isAuth, isNutr) // Μόνο διατροφολόγοι
+  @UseMiddleware(isAuth, isNutr)
   async getAppointmentRequestsForNutritionist(
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 20 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<AppointmentRequest[]> {
-    const requests = await AppointmentRequest.createQueryBuilder('request')
+    return AppointmentRequest.createQueryBuilder('request')
       .innerJoinAndSelect('request.slot', 'slot')
       .innerJoinAndSelect('request.client', 'client')
       .where('slot.nutritionistId = :nutrId', { nutrId: req.session.userId })
       .orderBy('request.requestedAt', 'DESC')
+      .take(Math.min(limit, 100))
+      .skip(offset)
       .getMany();
+  }
 
-    return requests;
+  @Query(() => [AppointmentRequest])
+  @UseMiddleware(isAuth, isUser)
+  async myAppointmentRequests(
+    @Ctx() { req }: MyContext,
+  ): Promise<AppointmentRequest[]> {
+    return AppointmentRequest.find({
+      where: { clientId: req.session.userId },
+      relations: ['slot'],
+      order: { requestedAt: 'DESC' },
+    });
   }
 }

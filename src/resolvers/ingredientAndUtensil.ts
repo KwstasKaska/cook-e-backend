@@ -10,7 +10,7 @@ export class IngredientResolver {
   async ingredients(): Promise<Ingredient[]> {
     return Ingredient.find({
       relations: ['category'],
-      order: { name: 'ASC' },
+      order: { name_el: 'ASC' },
     });
   }
 
@@ -19,7 +19,7 @@ export class IngredientResolver {
   async ingredientCategories(): Promise<IngredientsCategory[]> {
     return IngredientsCategory.find({
       relations: ['ingredients'],
-      order: { name: 'ASC' },
+      order: { name_el: 'ASC' },
     });
   }
 }
@@ -30,7 +30,7 @@ export class UtensilResolver {
   @Query(() => [Utensil])
   async utensils(): Promise<Utensil[]> {
     return Utensil.find({
-      order: { name: 'ASC' },
+      order: { name_el: 'ASC' },
     });
   }
 }

@@ -30,20 +30,26 @@ export class AppointmentResolver {
   async getMyAppointments(
     @Ctx() { req }: MyContext,
     @Arg('date', () => String, { nullable: true }) date?: string,
+    @Arg('limit', () => Int, { defaultValue: 20 }) limit: number = 20,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number = 0,
   ): Promise<Appointment[]> {
+    const safeLimit = Math.min(limit, 100);
     const query = `
         SELECT * FROM appointment
         WHERE "nutritionistId" = $1
         ${date ? `AND date = $2` : ''}
-        ORDER BY date, time;
+        ORDER BY date, time
+        LIMIT $${date ? 3 : 2} OFFSET $${date ? 4 : 3};
       `;
 
-    const params = date ? [req.session.userId, date] : [req.session.userId];
-    const slots = await AppDataSource.query(query, params);
-    return slots;
+    const params = date
+      ? [req.session.userId, date, safeLimit, offset]
+      : [req.session.userId, safeLimit, offset];
+
+    return AppDataSource.query(query, params);
   }
 
-  // Public — available slots for a given nutritionist
+  // Public — available slots for a given nutritionist (small fixed list, no pagination needed)
   @Query(() => [Appointment])
   async availableSlots(
     @Arg('nutritionistId', () => Int) nutritionistId: number,
@@ -132,10 +138,6 @@ export class AppointmentResolver {
       };
     }
 
-    // ── Booking check ────────────────────────────────────────────────
-    // Old code checked slot.nutritionistProfile which was unreliable.
-    // Correctly check whether an ACCEPTED AppointmentRequest exists
-    // for this slot — if so, it's booked and cannot be modified.
     const acceptedRequest = await AppointmentRequest.findOne({
       where: {
         slotId: slot.id,
@@ -154,7 +156,6 @@ export class AppointmentResolver {
         ],
       };
     }
-    // ────────────────────────────────────────────────────────────────
 
     if (data.date) slot.date = data.date;
     if (data.time) slot.time = data.time;
@@ -180,7 +181,6 @@ export class AppointmentResolver {
 
     if (!appointment) return false;
 
-    // Also block deletion if the slot has an accepted request
     const acceptedRequest = await AppointmentRequest.findOne({
       where: {
         slotId,

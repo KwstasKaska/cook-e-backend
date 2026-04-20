@@ -15,8 +15,6 @@ import { FieldError } from './types/field-error';
 import { Message } from '../entities/Messsaging/Message';
 import { Conversation } from '../entities/Messsaging/Conversation';
 
-//  Response types
-
 @ObjectType()
 class ConversationResponse {
   @Field(() => [FieldError], { nullable: true })
@@ -35,30 +33,25 @@ class MessageResponse {
   message?: Message;
 }
 
-// ─── Resolver ─────────────────────────────────────────────────────────────────
-
 @Resolver()
 export class MessagingResolver {
-  // ── myConversations ──────────────────────────────────────────────────────────
-  // Returns all conversations the logged-in user is part of (as either participant).
-  // Each conversation is loaded with participant user info so the inbox can render
-  // the other person's name and avatar.
-
   @Query(() => [Conversation])
   @UseMiddleware(isAuth)
-  async myConversations(@Ctx() { req }: MyContext): Promise<Conversation[]> {
+  async myConversations(
+    @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 20 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<Conversation[]> {
     const userId = req.session.userId;
 
     return Conversation.find({
       where: [{ participant1Id: userId }, { participant2Id: userId }],
       relations: ['participant1', 'participant2'],
       order: { updatedAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
-
-  // ── conversation(id) ─────────────────────────────────────────────────────────
-  // Fetches a single conversation with all its messages, ordered oldest-first.
-  // Only accessible if the logged-in user is one of the two participants.
 
   @Query(() => Conversation, { nullable: true })
   @UseMiddleware(isAuth)
@@ -81,18 +74,12 @@ export class MessagingResolver {
 
     if (!convo) return null;
 
-    // Guard: only participants can read the conversation
     if (convo.participant1Id !== userId && convo.participant2Id !== userId) {
       return null;
     }
 
     return convo;
   }
-
-  // ── startConversation(participantId) ─────────────────────────────────────────
-  // Creates a new conversation between the logged-in user and participantId.
-  // If a conversation between the two already exists (in either direction),
-  // it returns the existing one instead of creating a duplicate.
 
   @Mutation(() => ConversationResponse)
   @UseMiddleware(isAuth)
@@ -113,7 +100,6 @@ export class MessagingResolver {
       };
     }
 
-    // Check both orderings — participant columns have no enforced ordering
     const existing = await Conversation.findOne({
       where: [
         { participant1Id: userId, participant2Id: participantId },
@@ -133,7 +119,6 @@ export class MessagingResolver {
 
     await convo.save();
 
-    // Reload with relations so the response is fully populated
     const loaded = await Conversation.findOne({
       where: { id: convo.id },
       relations: ['participant1', 'participant2'],
@@ -141,11 +126,6 @@ export class MessagingResolver {
 
     return { conversation: loaded! };
   }
-
-  // ── sendMessage(conversationId, body) ────────────────────────────────────────
-  // Adds a message to an existing conversation.
-  // Rejects the write if the logged-in user is not a participant.
-  // Also bumps Conversation.updatedAt so inbox ordering stays correct.
 
   @Mutation(() => MessageResponse)
   @UseMiddleware(isAuth)
@@ -174,7 +154,6 @@ export class MessagingResolver {
       };
     }
 
-    // Guard: only participants can send messages
     if (convo.participant1Id !== userId && convo.participant2Id !== userId) {
       return {
         errors: [
@@ -194,10 +173,8 @@ export class MessagingResolver {
 
     await message.save();
 
-    // Bump updatedAt on the conversation so inbox ordering stays correct
     await Conversation.update(conversationId, { updatedAt: new Date() });
 
-    // Reload with sender relation for a fully populated response
     const loaded = await Message.findOne({
       where: { id: message.id },
       relations: ['sender'],

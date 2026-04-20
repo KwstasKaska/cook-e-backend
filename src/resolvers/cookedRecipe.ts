@@ -17,8 +17,6 @@ import { isUser } from '../middleware/isUser';
 import { MyContext } from '../types';
 import AppDataSource from '../app-data-source';
 
-// ── Response type for the 7-day summary ───────────────────────────────────────
-
 @ObjectType()
 class NutritionalSummary {
   @Field(() => Float, { nullable: true })
@@ -33,16 +31,12 @@ class NutritionalSummary {
   @Field(() => Float, { nullable: true })
   totalFat?: number;
 
-  // How many cook sessions are included in this sum
   @Field(() => Int)
   cookCount: number;
 }
 
-// ── Resolver ──────────────────────────────────────────────────────────────────
-
 @Resolver()
 export class CookedRecipeResolver {
-  // Log that the user cooked a recipe
   @Mutation(() => CookedRecipe)
   @UseMiddleware(isAuth, isUser)
   async logCookedRecipe(
@@ -60,7 +54,6 @@ export class CookedRecipeResolver {
     }).save();
   }
 
-  // Delete a specific cook log entry — in case user tapped by mistake
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isUser)
   async deleteCookLog(
@@ -77,19 +70,23 @@ export class CookedRecipeResolver {
     return true;
   }
 
-  // All cook logs for the logged-in user — full history
   @Query(() => [CookedRecipe])
   @UseMiddleware(isAuth, isUser)
-  async myCookedRecipes(@Ctx() { req }: MyContext): Promise<CookedRecipe[]> {
+  async myCookedRecipes(
+    @Ctx() { req }: MyContext,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<CookedRecipe[]> {
     return CookedRecipe.find({
       where: { userId: req.session.userId },
       relations: ['recipe'],
       order: { cookedAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 
-  // 7-day nutritional summary — sums macros from all cook logs in last 7 days
-  // Each log entry counts once (so cooking the same recipe twice counts double)
+  // 7-day nutritional summary — no pagination needed, it's always a single row
   @Query(() => NutritionalSummary)
   @UseMiddleware(isAuth, isUser)
   async myNutritionalSummary(
