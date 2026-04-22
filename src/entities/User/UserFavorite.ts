@@ -30,6 +30,7 @@ export class UserFavorite extends BaseEntity {
   @Column()
   recipeId!: number;
 
+  @Field(() => Recipe, { nullable: true })
   @ManyToOne(() => Recipe, (recipe) => recipe.favoritedBy)
   recipe!: Recipe;
 

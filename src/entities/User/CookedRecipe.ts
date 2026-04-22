@@ -28,6 +28,7 @@ export class CookedRecipe extends BaseEntity {
   @Column()
   recipeId!: number;
 
+  @Field(() => Recipe, { nullable: true })
   @ManyToOne(() => Recipe, (recipe) => recipe.cookedLogs)
   recipe!: Recipe;
 

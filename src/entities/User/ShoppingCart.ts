@@ -28,6 +28,7 @@ export class ShoppingCart extends BaseEntity {
   @Column()
   ingredientId!: number;
 
+  @Field(() => Ingredient, { nullable: true })
   @ManyToOne(() => Ingredient)
   ingredient!: Ingredient;
 

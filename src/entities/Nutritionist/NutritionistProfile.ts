@@ -5,6 +5,7 @@ import {
   OneToOne,
   JoinColumn,
   OneToMany,
+  Column,
 } from 'typeorm';
 import { User } from '../User/User';
 import { Appointment } from './Appointment';
@@ -18,9 +19,22 @@ export class NutritionistProfile extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Field(() => User, { nullable: true })
   @OneToOne(() => User)
   @JoinColumn()
   user: User;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
+  bio?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
+  phone?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
+  city?: string;
 
   @OneToMany(() => Appointment, (slot) => slot.nutritionistProfile)
   slots: Appointment[];

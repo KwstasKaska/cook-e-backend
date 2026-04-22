@@ -31,6 +31,7 @@ export class AppointmentRequest extends BaseEntity {
   @Column()
   slotId!: number;
 
+  @Field(() => Appointment, { nullable: true })
   @ManyToOne(() => Appointment, (slot) => slot.requests)
   slot!: Appointment;
 
@@ -38,6 +39,7 @@ export class AppointmentRequest extends BaseEntity {
   @Column()
   clientId!: number;
 
+  @Field(() => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.appointmentReqs)
   client!: User;
 

@@ -100,12 +100,10 @@ export class Recipe extends BaseEntity {
   @Column({ type: 'int', nullable: true })
   restTime?: number;
 
-  // Free-text shown on recipe detail page e.g. "Ελληνική", "Ιταλική"
   @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   foodEthnicity?: string;
 
-  // Predefined category matching the UI filter tabs
   @Field(() => RecipeCategory, { nullable: true })
   @Column({ type: 'enum', enum: RecipeCategory, nullable: true })
   category?: RecipeCategory;
@@ -130,15 +128,18 @@ export class Recipe extends BaseEntity {
 
   // ── Relations ──────────────────────────────────────────────────────
 
+  @Field(() => [RecipeIngredient], { nullable: true })
   @OneToMany(
     () => RecipeIngredient,
     (recipeIngredient) => recipeIngredient.recipe,
   )
   recipeIngredients: RecipeIngredient[];
 
+  @Field(() => [Step], { nullable: true })
   @OneToMany(() => Step, (step) => step.recipe)
   steps: Step[];
 
+  @Field(() => ChefProfile, { nullable: true })
   @ManyToOne(() => ChefProfile, (author) => author.recipes)
   author: ChefProfile;
 
@@ -146,6 +147,7 @@ export class Recipe extends BaseEntity {
   @Column()
   authorId: number;
 
+  @Field(() => [Utensil], { nullable: true })
   @ManyToMany(() => Utensil, (utensil) => utensil.recipes, { cascade: true })
   @JoinTable()
   utensils: Utensil[];

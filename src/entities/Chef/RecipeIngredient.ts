@@ -20,7 +20,7 @@ export class RecipeIngredient extends BaseEntity {
   recipeId: number;
 
   @ManyToOne(() => Recipe, (recipe) => recipe.recipeIngredients, {
-    onDelete: 'CASCADE', // ουσιαστικά με αυτό επιτυγχάνω οτι αν διαγραφεί απο την βάση στο Recipe entity ενα κλειδί, τότε θα διαγραφεί και το παιδί για να μην υπάρξει κάποιο "ορφανό".
+    onDelete: 'CASCADE',
   })
   recipe: Recipe;
 
@@ -28,12 +28,12 @@ export class RecipeIngredient extends BaseEntity {
   @PrimaryColumn()
   ingredientId: number;
 
+  @Field(() => Ingredient, { nullable: true })
   @ManyToOne(() => Ingredient, (ingredient) => ingredient.recipeIngredients, {
     onDelete: 'CASCADE',
   })
   ingredient: Ingredient;
 
-  // String to support fractions like "1/2", "3/4" etc.
   @Field(() => String)
   @Column({ type: 'text', nullable: true })
   quantity: string;
