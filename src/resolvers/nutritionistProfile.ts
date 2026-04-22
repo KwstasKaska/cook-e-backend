@@ -1,8 +1,6 @@
 import {
   Arg,
   Ctx,
-  Field,
-  InputType,
   Int,
   Mutation,
   Query,
@@ -13,18 +11,8 @@ import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfil
 import { isAuth } from '../middleware/isAuth';
 import { isNutr } from '../middleware/isNutr';
 import { MyContext } from '../types';
-
-@InputType()
-class UpdateNutritionistProfileInput {
-  @Field({ nullable: true })
-  bio?: string;
-
-  @Field({ nullable: true })
-  phone?: string;
-
-  @Field({ nullable: true })
-  city?: string;
-}
+import { UpdateNutritionistProfileInput } from './types/update-nutritionist-profile-input';
+import { NutritionistProfileResponse } from './types/nutritionist-profile-object';
 
 @Resolver(NutritionistProfile)
 export class NutritionistProfileResolver {
@@ -64,24 +52,36 @@ export class NutritionistProfileResolver {
     });
   }
 
-  @Mutation(() => NutritionistProfile, { nullable: true })
+  @Mutation(() => NutritionistProfileResponse)
   @UseMiddleware(isAuth, isNutr)
   async updateNutritionistProfile(
     @Arg('data') data: UpdateNutritionistProfileInput,
     @Ctx() { req }: MyContext,
-  ): Promise<NutritionistProfile | null> {
+  ): Promise<NutritionistProfileResponse> {
     const profile = await NutritionistProfile.findOne({
       where: { user: { id: req.session.userId } },
       relations: ['user'],
     });
 
-    if (!profile) return null;
+    if (!profile) {
+      return {
+        errors: [{ field: 'profile', message: 'Το προφίλ δεν βρέθηκε.' }],
+      };
+    }
 
     if (data.bio !== undefined) profile.bio = data.bio;
     if (data.phone !== undefined) profile.phone = data.phone;
     if (data.city !== undefined) profile.city = data.city;
 
-    await profile.save();
-    return profile;
+    try {
+      const nutritionistProfile = await profile.save();
+      return { nutritionistProfile };
+    } catch {
+      return {
+        errors: [
+          { field: 'server', message: 'Κάτι πήγε λάθος κατά την αποθήκευση.' },
+        ],
+      };
+    }
   }
 }

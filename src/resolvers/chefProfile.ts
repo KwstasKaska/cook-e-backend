@@ -1,8 +1,6 @@
 import {
   Arg,
   Ctx,
-  Field,
-  InputType,
   Int,
   Mutation,
   Query,
@@ -13,12 +11,8 @@ import { ChefProfile } from '../entities/Chef/ChefProfile';
 import { isAuth } from '../middleware/isAuth';
 import { isChef } from '../middleware/isChef';
 import { MyContext } from '../types';
-
-@InputType()
-class UpdateChefProfileInput {
-  @Field({ nullable: true })
-  bio?: string;
-}
+import { UpdateChefProfileInput } from './types/update-chef-profile-input';
+import { ChefProfileResponse } from './types/chef-profile-object';
 
 @Resolver(ChefProfile)
 export class ChefProfileResolver {
@@ -51,22 +45,34 @@ export class ChefProfileResolver {
     });
   }
 
-  @Mutation(() => ChefProfile, { nullable: true })
+  @Mutation(() => ChefProfileResponse)
   @UseMiddleware(isAuth, isChef)
   async updateChefProfile(
     @Arg('data') data: UpdateChefProfileInput,
     @Ctx() { req }: MyContext,
-  ): Promise<ChefProfile | null> {
+  ): Promise<ChefProfileResponse> {
     const profile = await ChefProfile.findOne({
       where: { user: { id: req.session.userId } },
       relations: ['user'],
     });
 
-    if (!profile) return null;
+    if (!profile) {
+      return {
+        errors: [{ field: 'profile', message: 'Το προφίλ δεν βρέθηκε.' }],
+      };
+    }
 
     if (data.bio !== undefined) profile.bio = data.bio;
 
-    await profile.save();
-    return profile;
+    try {
+      const chefProfile = await profile.save();
+      return { chefProfile };
+    } catch {
+      return {
+        errors: [
+          { field: 'server', message: 'Κάτι πήγε λάθος κατά την αποθήκευση.' },
+        ],
+      };
+    }
   }
 }

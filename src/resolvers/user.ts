@@ -179,8 +179,8 @@ export class UserResolver {
         }).save();
       }
     } catch (err) {
-      if (err.code === '23505') {
-        if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
+      if ((err as any).code === '23505') {
+        if ((err as any).constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
           return {
             errors: [
               {
@@ -189,7 +189,9 @@ export class UserResolver {
               },
             ],
           };
-        } else if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
+        } else if (
+          (err as any).constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22'
+        ) {
           return {
             errors: [
               {
@@ -287,7 +289,7 @@ export class UserResolver {
   }
 
   @Mutation(() => UserResponse)
-  @UseMiddleware(isAuth, isUser)
+  @UseMiddleware(isAuth)
   async updateUser(
     @Arg('data') data: UpdateUserInput,
     @Ctx() { req }: MyContext,
@@ -330,8 +332,8 @@ export class UserResolver {
     try {
       await user.save();
     } catch (err) {
-      if (err.code === '23505') {
-        if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
+      if ((err as any).code === '23505') {
+        if ((err as any).constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
           return {
             errors: [
               {
@@ -341,7 +343,7 @@ export class UserResolver {
             ],
           };
         }
-        if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
+        if ((err as any).constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
           return {
             errors: [
               {
