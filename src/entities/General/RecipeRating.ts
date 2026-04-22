@@ -24,6 +24,7 @@ export class RecipeRating extends BaseEntity {
   @Column()
   userId!: number;
 
+  @Field(() => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.recipeRatings)
   user!: User;
 

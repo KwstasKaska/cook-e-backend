@@ -1,8 +1,30 @@
-import { Arg, Ctx, Int, Query, Resolver, UseMiddleware } from 'type-graphql';
+import {
+  Arg,
+  Ctx,
+  Field,
+  InputType,
+  Int,
+  Mutation,
+  Query,
+  Resolver,
+  UseMiddleware,
+} from 'type-graphql';
 import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfile';
 import { isAuth } from '../middleware/isAuth';
 import { isNutr } from '../middleware/isNutr';
 import { MyContext } from '../types';
+
+@InputType()
+class UpdateNutritionistProfileInput {
+  @Field({ nullable: true })
+  bio?: string;
+
+  @Field({ nullable: true })
+  phone?: string;
+
+  @Field({ nullable: true })
+  city?: string;
+}
 
 @Resolver(NutritionistProfile)
 export class NutritionistProfileResolver {
@@ -40,5 +62,26 @@ export class NutritionistProfileResolver {
       where: { user: { id: req.session.userId } },
       relations: ['user'],
     });
+  }
+
+  @Mutation(() => NutritionistProfile, { nullable: true })
+  @UseMiddleware(isAuth, isNutr)
+  async updateNutritionistProfile(
+    @Arg('data') data: UpdateNutritionistProfileInput,
+    @Ctx() { req }: MyContext,
+  ): Promise<NutritionistProfile | null> {
+    const profile = await NutritionistProfile.findOne({
+      where: { user: { id: req.session.userId } },
+      relations: ['user'],
+    });
+
+    if (!profile) return null;
+
+    if (data.bio !== undefined) profile.bio = data.bio;
+    if (data.phone !== undefined) profile.phone = data.phone;
+    if (data.city !== undefined) profile.city = data.city;
+
+    await profile.save();
+    return profile;
   }
 }

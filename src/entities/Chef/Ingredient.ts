@@ -33,6 +33,7 @@ export class Ingredient extends BaseEntity {
   @OneToMany(() => RecipeIngredient, (ri) => ri.ingredient)
   recipeIngredients: RecipeIngredient[];
 
+  @Field(() => IngredientsCategory, { nullable: true })
   @ManyToOne(
     () => IngredientsCategory,
     (ingredientCategory) => ingredientCategory.ingredients,

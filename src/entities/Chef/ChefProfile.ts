@@ -1,6 +1,7 @@
 import { Field, ObjectType } from 'type-graphql';
 import {
   BaseEntity,
+  Column,
   Entity,
   JoinColumn,
   OneToMany,
@@ -23,9 +24,15 @@ export class ChefProfile extends BaseEntity {
   @JoinColumn()
   user: User;
 
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
+  bio?: string;
+
+  @Field(() => [Recipe], { nullable: true })
   @OneToMany(() => Recipe, (recipe) => recipe.author)
   recipes: Recipe[];
 
+  @Field(() => [ChefRating], { nullable: true })
   @OneToMany(() => ChefRating, (rating) => rating.chef)
   ratings: ChefRating[];
 }
