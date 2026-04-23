@@ -24,6 +24,7 @@ import { MyContext } from '../types';
 import { MealPlanResponse } from './types/mealScheduler-object';
 import { UpdateMealSchedulerInput } from './types/mealScheduler-input';
 import { translateText } from '../utils/translate';
+import { isUser } from '../middleware/isUser';
 
 @Resolver()
 export class NutritionPlanResolver {
@@ -48,6 +49,16 @@ export class NutritionPlanResolver {
       order: { day: 'ASC', mealType: 'ASC' },
       take: Math.min(limit, 100),
       skip: offset,
+    });
+  }
+
+  @Query(() => [MealScheduler])
+  @UseMiddleware(isAuth, isUser)
+  async myMealPlan(@Ctx() { req }: MyContext): Promise<MealScheduler[]> {
+    return MealScheduler.find({
+      where: { user: { id: req.session.userId } },
+      relations: ['nutritionist', 'nutritionist.user'],
+      order: { day: 'ASC', mealType: 'ASC' },
     });
   }
 
@@ -84,11 +95,13 @@ export class NutritionPlanResolver {
         };
       }
 
+      // Use nutritionist.id (NutritionistProfile.id) not req.session.userId (User.id)
+      // slot.nutritionistId stores NutritionistProfile.id — same bug class as appointment resolvers
       const approvedRequest = await AppointmentRequest.createQueryBuilder('req')
         .innerJoin('req.slot', 'slot')
         .where('req.clientId = :userId', { userId })
-        .andWhere('slot.nutritionistId = :nutrUserId', {
-          nutrUserId: req.session.userId,
+        .andWhere('slot.nutritionistId = :profileId', {
+          profileId: nutritionist.id,
         })
         .andWhere('req.status = :status', {
           status: AppointmentStatus.ACCEPTED,
@@ -152,7 +165,7 @@ export class NutritionPlanResolver {
 
   @Mutation(() => MealPlanResponse, { nullable: true })
   @UseMiddleware(isAuth, isNutr)
-  async UpdateMealSchedulerInput(
+  async updateMealScheduler(
     @Arg('data') data: UpdateMealSchedulerInput,
     @Ctx() { req }: MyContext,
   ): Promise<MealPlanResponse> {
