@@ -9,6 +9,7 @@ import {
 } from 'type-graphql';
 import { Appointment } from '../entities/Nutritionist/Appointment';
 import { AppointmentRequest } from '../entities/Nutritionist/AppointmentRequest';
+import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfile';
 import { isAuth } from '../middleware/isAuth';
 import { MyContext } from '../types';
 import { AppointmentRequestInput } from './types/request-input';
@@ -17,8 +18,22 @@ import { AppointmentStatus } from '../entities/Nutritionist/AppointmentRequest';
 import { isUser } from '../middleware/isUser';
 import { isNutr } from '../middleware/isNutr';
 
+// ── Helper ────────────────────────────────────────────────────────────────────
+// appointment.nutritionistId stores NutritionistProfile.id, NOT User.id.
+async function resolveProfileId(
+  userId: number | undefined,
+): Promise<number | null> {
+  if (!userId) return null;
+  const profile = await NutritionistProfile.findOne({
+    where: { user: { id: userId } },
+  });
+  return profile?.id ?? null;
+}
+
 @Resolver()
 export class AppointmentRequestResolver {
+  // ── User mutations ────────────────────────────────────────────────────────
+
   @Mutation(() => AppointmentRequestResponse)
   @UseMiddleware(isAuth, isUser)
   async requestAppointment(
@@ -136,9 +151,7 @@ export class AppointmentRequestResolver {
 
     if (!appointmentRequest) return false;
 
-    if (appointmentRequest.status !== AppointmentStatus.PENDING) {
-      return false;
-    }
+    if (appointmentRequest.status !== AppointmentStatus.PENDING) return false;
 
     try {
       await AppointmentRequest.remove(appointmentRequest);
@@ -148,6 +161,8 @@ export class AppointmentRequestResolver {
     }
   }
 
+  // ── Nutritionist mutations ─────────────────────────────────────────────────
+
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isNutr)
   async respondToAppointmentRequest(
@@ -155,6 +170,10 @@ export class AppointmentRequestResolver {
     @Arg('status', () => AppointmentStatus) status: AppointmentStatus,
     @Ctx() { req }: MyContext,
   ): Promise<boolean> {
+    // Resolve profile id so we can verify slot ownership correctly
+    const profileId = await resolveProfileId(req.session.userId);
+    if (!profileId) return false;
+
     const request = await AppointmentRequest.createQueryBuilder('request')
       .leftJoinAndSelect('request.slot', 'slot')
       .where('request.id = :id', { id: requestId })
@@ -162,13 +181,10 @@ export class AppointmentRequestResolver {
 
     if (!request) return false;
 
-    if (request.slot.nutritionistId !== req.session.userId) {
-      return false;
-    }
+    // Guard: slot must belong to this nutritionist's profile
+    if (request.slot.nutritionistId !== profileId) return false;
 
-    if (request.status !== AppointmentStatus.PENDING) {
-      return false;
-    }
+    if (request.status !== AppointmentStatus.PENDING) return false;
 
     request.status = status;
 
@@ -181,6 +197,8 @@ export class AppointmentRequestResolver {
     return true;
   }
 
+  // ── Nutritionist queries ───────────────────────────────────────────────────
+
   @Query(() => [AppointmentRequest])
   @UseMiddleware(isAuth, isNutr)
   async getAppointmentRequestsForNutritionist(
@@ -188,15 +206,21 @@ export class AppointmentRequestResolver {
     @Arg('limit', () => Int, { defaultValue: 20 }) limit: number,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<AppointmentRequest[]> {
+    // Must resolve profile id — slot.nutritionistId is NutritionistProfile.id
+    const profileId = await resolveProfileId(req.session.userId);
+    if (!profileId) return [];
+
     return AppointmentRequest.createQueryBuilder('request')
       .innerJoinAndSelect('request.slot', 'slot')
       .innerJoinAndSelect('request.client', 'client')
-      .where('slot.nutritionistId = :nutrId', { nutrId: req.session.userId })
+      .where('slot.nutritionistId = :nutrId', { nutrId: profileId })
       .orderBy('request.requestedAt', 'DESC')
       .take(Math.min(limit, 100))
       .skip(offset)
       .getMany();
   }
+
+  // ── User queries ───────────────────────────────────────────────────────────
 
   @Query(() => [AppointmentRequest])
   @UseMiddleware(isAuth, isUser)

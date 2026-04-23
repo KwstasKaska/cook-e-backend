@@ -16,6 +16,7 @@ import {
   AppointmentRequest,
   AppointmentStatus,
 } from '../entities/Nutritionist/AppointmentRequest';
+import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfile';
 import {
   AddAppointmentInput,
   UpdateSlotInput,
@@ -23,8 +24,23 @@ import {
 import { AppointmentResponse } from './types/appointment-object';
 import { validateAppointments } from '../utils/validateAppointment';
 
+// ── Helper ─────────────────────────────────────────────────────────────────
+// appointment.nutritionistId stores NutritionistProfile.id, NOT User.id.
+// Every guarded resolver must resolve the profile id first via this helper.
+async function resolveProfileId(
+  userId: number | undefined,
+): Promise<number | null> {
+  if (!userId) return null;
+  const profile = await NutritionistProfile.findOne({
+    where: { user: { id: userId } },
+  });
+  return profile?.id ?? null;
+}
+
 @Resolver(Appointment)
 export class AppointmentResolver {
+  // ── Queries ──────────────────────────────────────────────────────────────
+
   @Query(() => [Appointment])
   @UseMiddleware(isAuth, isNutr)
   async getMyAppointments(
@@ -33,23 +49,26 @@ export class AppointmentResolver {
     @Arg('limit', () => Int, { defaultValue: 20 }) limit: number = 20,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number = 0,
   ): Promise<Appointment[]> {
+    const profileId = await resolveProfileId(req.session.userId);
+    if (!profileId) return [];
+
     const safeLimit = Math.min(limit, 100);
     const query = `
-        SELECT * FROM appointment
-        WHERE "nutritionistId" = $1
-        ${date ? `AND date = $2` : ''}
-        ORDER BY date, time
-        LIMIT $${date ? 3 : 2} OFFSET $${date ? 4 : 3};
-      `;
+      SELECT * FROM appointment
+      WHERE "nutritionistId" = $1
+      ${date ? `AND date = $2` : ''}
+      ORDER BY date, time
+      LIMIT $${date ? 3 : 2} OFFSET $${date ? 4 : 3};
+    `;
 
     const params = date
-      ? [req.session.userId, date, safeLimit, offset]
-      : [req.session.userId, safeLimit, offset];
+      ? [profileId, date, safeLimit, offset]
+      : [profileId, safeLimit, offset];
 
     return AppDataSource.query(query, params);
   }
 
-  // Public — available slots for a given nutritionist (small fixed list, no pagination needed)
+  // Public — available slots for a given nutritionist (no auth required)
   @Query(() => [Appointment])
   async availableSlots(
     @Arg('nutritionistId', () => Int) nutritionistId: number,
@@ -63,6 +82,8 @@ export class AppointmentResolver {
     });
   }
 
+  // ── Mutations ────────────────────────────────────────────────────────────
+
   @Mutation(() => AppointmentResponse)
   @UseMiddleware(isAuth, isNutr)
   async createAppointment(
@@ -70,8 +91,18 @@ export class AppointmentResolver {
     @Ctx() { req }: MyContext,
   ): Promise<AppointmentResponse> {
     const errors = validateAppointments(data);
-    if (errors) {
-      return { errors };
+    if (errors) return { errors };
+
+    const profileId = await resolveProfileId(req.session.userId);
+    if (!profileId) {
+      return {
+        errors: [
+          {
+            field: 'server',
+            message: 'Δεν βρέθηκε προφίλ διατροφολόγου.',
+          },
+        ],
+      };
     }
 
     try {
@@ -79,7 +110,7 @@ export class AppointmentResolver {
         where: {
           date: data.date,
           time: data.time,
-          nutritionistId: req.session.userId,
+          nutritionistId: profileId,
         },
       });
 
@@ -97,7 +128,7 @@ export class AppointmentResolver {
       const slot = await Appointment.create({
         date: data.date,
         time: data.time,
-        nutritionistId: req.session.userId,
+        nutritionistId: profileId,
       }).save();
 
       return { slot };
@@ -120,29 +151,27 @@ export class AppointmentResolver {
     @Arg('data') data: UpdateSlotInput,
     @Ctx() { req }: MyContext,
   ): Promise<AppointmentResponse | null> {
-    const slot = await Appointment.findOne({
-      where: {
-        id: data.slotId,
-        nutritionistId: req.session.userId,
-      },
-    });
-
-    if (!slot) {
+    const profileId = await resolveProfileId(req.session.userId);
+    if (!profileId) {
       return {
         errors: [
-          {
-            field: 'appointment',
-            message: 'Το ραντεβού δεν βρέθηκε.',
-          },
+          { field: 'server', message: 'Δεν βρέθηκε προφίλ διατροφολόγου.' },
         ],
       };
     }
 
+    const slot = await Appointment.findOne({
+      where: { id: data.slotId, nutritionistId: profileId },
+    });
+
+    if (!slot) {
+      return {
+        errors: [{ field: 'appointment', message: 'Το ραντεβού δεν βρέθηκε.' }],
+      };
+    }
+
     const acceptedRequest = await AppointmentRequest.findOne({
-      where: {
-        slotId: slot.id,
-        status: AppointmentStatus.ACCEPTED,
-      },
+      where: { slotId: slot.id, status: AppointmentStatus.ACCEPTED },
     });
 
     if (acceptedRequest) {
@@ -172,20 +201,17 @@ export class AppointmentResolver {
     @Arg('slotId', () => Int) slotId: number,
     @Ctx() { req }: MyContext,
   ): Promise<boolean> {
+    const profileId = await resolveProfileId(req.session.userId);
+    if (!profileId) return false;
+
     const appointment = await Appointment.findOne({
-      where: {
-        id: slotId,
-        nutritionistId: req.session.userId,
-      },
+      where: { id: slotId, nutritionistId: profileId },
     });
 
     if (!appointment) return false;
 
     const acceptedRequest = await AppointmentRequest.findOne({
-      where: {
-        slotId,
-        status: AppointmentStatus.ACCEPTED,
-      },
+      where: { slotId, status: AppointmentStatus.ACCEPTED },
     });
 
     if (acceptedRequest) return false;
