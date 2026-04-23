@@ -47,6 +47,33 @@ export class RatingResolver {
     return result[0]?.avg ?? null;
   }
 
+  @Query(() => [Recipe])
+  async topRatedRecipes(
+    @Arg('limit', () => Int, { defaultValue: 3 }) limit: number,
+  ): Promise<Recipe[]> {
+    const rows: { recipeId: number }[] = await AppDataSource.query(
+      `SELECT rr."recipeId"
+     FROM recipe_rating rr
+     WHERE rr."createdAt" >= NOW() - INTERVAL '7 days'
+     GROUP BY rr."recipeId"
+     ORDER BY AVG(rr.score) DESC
+     LIMIT $1`,
+      [limit],
+    );
+
+    if (rows.length === 0) return [];
+
+    const recipes = await Promise.all(
+      rows.map((r) =>
+        Recipe.findOne({
+          where: { id: r.recipeId },
+          relations: ['author', 'author.user'],
+        }),
+      ),
+    );
+    return recipes.filter(Boolean) as Recipe[];
+  }
+
   @Mutation(() => ChefRating)
   @UseMiddleware(isAuth, isUser)
   async rateChef(
