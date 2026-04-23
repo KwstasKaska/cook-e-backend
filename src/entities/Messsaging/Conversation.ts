@@ -19,6 +19,7 @@ export class Conversation extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Field(() => User)
   @ManyToOne(() => User, (user) => user.conversationsAsParticipant1)
   participant1: User;
 
@@ -26,6 +27,7 @@ export class Conversation extends BaseEntity {
   @Column()
   participant1Id: number;
 
+  @Field(() => User)
   @ManyToOne(() => User, (user) => user.conversationsAsParticipant2)
   participant2: User;
 
@@ -33,6 +35,7 @@ export class Conversation extends BaseEntity {
   @Column()
   participant2Id: number;
 
+  @Field(() => [Message])
   @OneToMany(() => Message, (message) => message.conversation)
   messages: Message[];
 
