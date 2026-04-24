@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "engines": {
-    "node": ">=18.x"
+    "node": "20.x"
   },
   "devDependencies": {
     "@types/connect-redis": "^0.0.23",
