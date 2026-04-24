@@ -79,7 +79,7 @@ const categoryTranslations: Record<CategoryKey, { el: string; en: string }> = {
   Spices: { el: 'Μπαχαρικά', en: 'Spices & Herbs' },
 };
 
-// ── Seed functions ────────────────────────────────────────────────────────────
+//  Seed functions
 
 async function seedIngredients() {
   const ingredientRepo = AppDataSource.getRepository(Ingredient);
