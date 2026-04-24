@@ -27,8 +27,8 @@ export const validateRegister = (options: RegisterUserInput) => {
   }
 
   if (
-    !options.password.match(/[A-Z]/) &&
-    !options.password.match(/[-!$%^&*()_+|~=`{}\[\]:";'<>?,.\/]/) &&
+    !options.password.match(/[A-Z]/) ||
+    !options.password.match(/[-!$%^&*()_+|~=`{}\[\]:";'<>?,.\/]/) ||
     options.password.length <= 4
   ) {
     return [

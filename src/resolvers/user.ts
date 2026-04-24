@@ -49,8 +49,8 @@ export class UserResolver {
     @Ctx() { redis, req }: MyContext,
   ): Promise<UserResponse> {
     if (
-      !newPassword.match(/[A-Z]/) &&
-      !newPassword.match(/[-!$%^&*()_+|~=`{}\[\]:";'<>?,.\/]/) &&
+      !newPassword.match(/[A-Z]/) ||
+      !newPassword.match(/[-!$%^&*()_+|~=`{}\[\]:";'<>?,.\/]/) ||
       newPassword.length <= 4
     ) {
       return {
