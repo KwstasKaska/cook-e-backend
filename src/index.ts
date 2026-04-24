@@ -5,7 +5,7 @@ import AppDataSource from './app-data-source';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import express from 'express';
+import express, { Application } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import session from 'express-session';
@@ -41,17 +41,18 @@ const main = async () => {
     .then(() => {
       console.log('Data Source has been initialized!');
     })
-    .catch((err) => {
+    .catch((err: unknown) => {
       console.error('Error during Data Source initialization', err);
     });
 
   // Let's create the express server
-  const app = express();
+  // explicit type ώστε το TypeScript να ξέρει ότι είναι Express app
+  const app: Application = express();
   const httpServer = createServer(app);
 
   // Here we will connect redis in order to make faster queries in the server side in addition with my cookie
 
-  // Redis fallback
+  // Redis fallback - αν δεν υπάρχει REDIS_URL χρησιμοποιούμε in-memory sessions
   const RedisStore = require('connect-redis').default;
   const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
@@ -78,7 +79,6 @@ const main = async () => {
   );
 
   // Here i create an apollo server instance in order to create my schema and the resolvers usings typegraphql
-
   const apolloServer = new ApolloServer<MyContext>({
     schema: await buildSchema({
       resolvers: [
@@ -117,15 +117,16 @@ const main = async () => {
   await apolloServer.start();
 
   app.set('trust proxy', true);
-  // I declare my cors and expressMiddlaware in order for me to use apollo-express-server
+
+  // I declare my cors and expressMiddleware in order for me to use apollo-express-server
   app.use(
     '/graphql',
-    cors<cors.CorsRequest>({
+    cors({
       origin: [
         'http://localhost:3000',
         'https://studio.apollographql.com',
         process.env.CORS_ORIGIN!,
-      ].filter(Boolean),
+      ].filter(Boolean) as string[],
       credentials: true,
     }),
     bodyParser.json(),
@@ -133,12 +134,13 @@ const main = async () => {
       context: async ({ req, res }) => ({ req, res, redis }),
     }),
   );
+
   // I define the port of the server
   httpServer.listen(4000, () => {
     console.log('Server started on localhost:4000/graphql');
   });
 };
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error(err);
 });
