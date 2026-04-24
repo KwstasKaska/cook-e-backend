@@ -3,6 +3,6 @@ import Redis from 'ioredis';
 
 export type MyContext = {
   req: Request;
-  redis: Redis;
+  redis: Redis | null;
   res: Response;
 };

@@ -64,6 +64,14 @@ export class UserResolver {
       };
     }
 
+    if (!redis) {
+      return {
+        errors: [
+          { field: 'token', message: 'Η υπηρεσία δεν είναι διαθέσιμη.' },
+        ],
+      };
+    }
+
     const key = 'forget-password:' + token;
     const userId = await redis.get(key);
     if (!userId) {
@@ -112,7 +120,7 @@ export class UserResolver {
       return true;
     }
     const token = v4();
-
+    if (!redis) return false;
     await redis.set(
       'forget-password:' + token,
       user.id,

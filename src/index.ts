@@ -51,24 +51,25 @@ const main = async () => {
 
   // Here we will connect redis in order to make faster queries in the server side in addition with my cookie
 
+  // Redis fallback
   const RedisStore = require('connect-redis').default;
-  const redis = new Redis(process.env.REDIS_URL!);
-
-  // I define my cookie and it's settings
+  const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
   app.use(
     session({
       name: COOKIE_NAME,
-      store: new RedisStore({
-        client: redis,
-        disableTTL: true,
-        disableTouch: true,
-      }),
+      store: redis
+        ? new RedisStore({
+            client: redis,
+            disableTTL: true,
+            disableTouch: true,
+          })
+        : undefined, // in-memory fallback
       cookie: {
-        maxAge: 1000 * 60 * 60 * 24 * 365 * 4, //4years
+        maxAge: 1000 * 60 * 60 * 24 * 365 * 4,
         httpOnly: true,
         sameSite: 'lax',
-        secure: false, // cookie only works in https, when sameSite = none then secure is true => playground and when same site is lax secure is false => web
+        secure: process.env.NODE_ENV === 'production', // true on Render
       },
       saveUninitialized: false,
       secret: process.env.SESSION_SECRET!,
@@ -120,15 +121,18 @@ const main = async () => {
   app.use(
     '/graphql',
     cors<cors.CorsRequest>({
-      origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
+      origin: [
+        'http://localhost:3000',
+        'https://studio.apollographql.com',
+        process.env.CORS_ORIGIN!,
+      ].filter(Boolean),
       credentials: true,
     }),
     bodyParser.json(),
     expressMiddleware(apolloServer, {
-      context: async ({ req, res }) => ({ req, res, redis: redis }),
+      context: async ({ req, res }) => ({ req, res, redis }),
     }),
   );
-
   // I define the port of the server
   httpServer.listen(4000, () => {
     console.log('Server started on localhost:4000/graphql');
