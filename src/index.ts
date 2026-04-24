@@ -65,17 +65,17 @@ const main = async () => {
             disableTTL: true,
             disableTouch: true,
           })
-        : undefined, // in-memory fallback
+        : undefined,
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 4,
         httpOnly: true,
         sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production', // true on Render
+        secure: process.env.NODE_ENV === 'production',
       },
       saveUninitialized: false,
       secret: process.env.SESSION_SECRET!,
       resave: false,
-    }),
+    }) as express.RequestHandler,
   );
 
   // Here i create an apollo server instance in order to create my schema and the resolvers usings typegraphql
