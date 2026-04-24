@@ -5,7 +5,7 @@ import AppDataSource from './app-data-source';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import express from 'express';
+import express, { Express } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import session from 'express-session';
@@ -47,7 +47,7 @@ const main = async () => {
 
   // Let's create the express server
   // explicit type ώστε το TypeScript να ξέρει ότι είναι Express app
-  const app = express();
+  const app: Express = express();
   const httpServer = createServer(app);
 
   // Here we will connect redis in order to make faster queries in the server side in addition with my cookie
