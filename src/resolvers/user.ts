@@ -9,7 +9,6 @@ import {
   UseMiddleware,
 } from 'type-graphql';
 import { RegisterUserInput } from './types/user-input';
-// import { MyContext } from '../types';
 import argon2 from 'argon2';
 import AppDataSource from '../app-data-source';
 import { User } from '../entities/User/User';
@@ -25,20 +24,15 @@ import { isUser } from '../middleware/isUser';
 import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfile';
 import { MealScheduler } from '../entities/Nutritionist/MealScheduler';
 import { ChefProfile } from '../entities/Chef/ChefProfile';
-import { createWriteStream } from 'fs';
-import { GraphQLUpload, FileUpload } from 'graphql-upload-minimal';
-import path from 'path';
 import { UpdateUserInput } from './types/update-user-input';
 
 @Resolver(User)
 export class UserResolver {
   @FieldResolver(() => String)
   email(@Root() user: User, @Ctx() { req }: MyContext) {
-    // This is the current user and its ok to show them their email
     if (req.session.userId === user.id) {
       return user.email;
     }
-    //  current user wants to see someone elses email
     return '';
   }
 
@@ -103,7 +97,6 @@ export class UserResolver {
 
     await redis.del(key);
 
-    // login user after change password
     req.session.userId = user?.id;
 
     return { user } as any;
@@ -116,7 +109,6 @@ export class UserResolver {
   ) {
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      // the email is not in the db
       return true;
     }
     const token = v4();
@@ -125,20 +117,18 @@ export class UserResolver {
       'forget-password:' + token,
       user.id,
       'EX',
-      60 * 60 * 24 * 3, //3 days
+      60 * 60 * 24 * 3,
     );
 
     await sendEmail(
       email,
-      `<a  href="http://localhost:3000/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`,
+      `<a href="${process.env.FRONTEND_URL}/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`,
     );
     return true;
   }
 
   @Query(() => User, { nullable: true })
-  // @UseMiddleware(isRole)
   async me(@Ctx() { req }: MyContext) {
-    // you are not logged in
     if (!req.session.userId) {
       console.log('Not logged');
       return null;
@@ -175,13 +165,11 @@ export class UserResolver {
 
       user = result.raw[0];
       if (user.role === 'nutritionist') {
-        // εδώ κάνω cast το userId σε User, για να το δεχτεί το TypeORM relation
         await NutritionistProfile.create({
           user: { id: user.id } as User,
         }).save();
       }
       if (user.role === 'chef') {
-        //  εδώ κάνω cast το userId σε User, για να το δεχτεί το TypeORM relation
         await ChefProfile.create({
           user: { id: user.id } as User,
         }).save();
@@ -210,9 +198,6 @@ export class UserResolver {
       }
     }
 
-    //store user id session
-    // this will set a cookie on the user
-    // keep them logged in
     req.session.userId = user.id;
     req.session.userRole = user.role;
     return { user };
@@ -305,7 +290,6 @@ export class UserResolver {
       return { errors: [{ field: 'user', message: 'Ο χρήστης δεν βρέθηκε.' }] };
     }
 
-    // Password change — requires current password verification
     if (data.newPassword) {
       if (!data.currentPassword) {
         return {
@@ -334,6 +318,7 @@ export class UserResolver {
     if (data.username) user.username = data.username;
     if (data.email) user.email = data.email;
     if (data.phoneNumber) user.phoneNumber = data.phoneNumber;
+    if (data.image) user.image = data.image;
 
     try {
       await user.save();
@@ -363,32 +348,5 @@ export class UserResolver {
     }
 
     return { user };
-  }
-
-  @Mutation(() => Boolean)
-  @UseMiddleware(isAuth, isUser)
-  async updateUserImage(
-    @Arg('picture', () => GraphQLUpload) picture: FileUpload,
-    @Ctx() { req }: MyContext,
-  ): Promise<boolean> {
-    const user = await User.findOne({ where: { id: req.session.userId } });
-    if (!user) return false;
-
-    const { createReadStream, filename } = picture;
-    const imagePath = path.join(__dirname, `../../public/images/${filename}`);
-
-    return new Promise((resolve, reject) => {
-      createReadStream()
-        .pipe(createWriteStream(imagePath))
-        .on('finish', async () => {
-          user.image = `http://localhost:4000/images/${filename}`;
-          await user.save();
-          resolve(true);
-        })
-        .on('error', (error) => {
-          console.error('Error writing file:', error);
-          reject(false);
-        });
-    });
   }
 }

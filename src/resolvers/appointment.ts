@@ -82,7 +82,7 @@ export class AppointmentResolver {
     });
   }
 
-  // ── Mutations ────────────────────────────────────────────────────────────
+  // ── Mutations
 
   @Mutation(() => AppointmentResponse)
   @UseMiddleware(isAuth, isNutr)

@@ -18,14 +18,11 @@ import {
   validateArticle,
   validateUpdateArticle,
 } from '../utils/validateArticle';
-import { FileUpload, GraphQLUpload } from 'graphql-upload-minimal';
-import { createWriteStream } from 'fs';
-import path from 'path';
 import { translateText } from '../utils/translate';
 
 @Resolver(Article)
 export class ArticleResolver {
-  //  Public Queries
+  // ─── Public Queries ───────────────────────────────────────────────
 
   @Query(() => [Article])
   async articles(
@@ -123,13 +120,12 @@ export class ArticleResolver {
     );
   }
 
-  // Mutations
+  // ─── Mutations ────────────────────────────────────────────────────
 
   @Mutation(() => ArticleResponse)
   @UseMiddleware(isAuth)
   async createArticle(
     @Arg('data') data: AddArticleInput,
-    @Arg('picture', () => GraphQLUpload) picture: FileUpload,
     @Ctx() { req }: MyContext,
   ): Promise<ArticleResponse> {
     const errors = validateArticle(data);
@@ -140,36 +136,22 @@ export class ArticleResolver {
       translateText(data.text),
     ]);
 
-    const { createReadStream, filename } = picture;
-    const imagePath = path.join(__dirname, `../../public/images/${filename}`);
+    const article = await Article.create({
+      title_el: data.title,
+      title_en,
+      text_el: data.text,
+      text_en,
+      creatorId: req.session.userId,
+      image: data.image,
+    }).save();
 
-    return new Promise(async (resolve, reject) => {
-      createReadStream()
-        .pipe(createWriteStream(imagePath))
-        .on('finish', async () => {
-          const article = await Article.create({
-            title_el: data.title,
-            title_en,
-            text_el: data.text,
-            text_en,
-            creatorId: req.session.userId,
-            image: `http://localhost:4000/images/${filename}`,
-          }).save();
-          resolve({ article });
-        })
-        .on('error', (error) => {
-          console.error('Error writing file:', error);
-          reject(false);
-        });
-    });
+    return { article };
   }
 
   @Mutation(() => ArticleResponse)
   @UseMiddleware(isAuth)
   async updateArticle(
     @Arg('data') data: UpdateArticleInput,
-    @Arg('picture', () => GraphQLUpload, { nullable: true })
-    picture: FileUpload,
     @Ctx() { req }: MyContext,
   ): Promise<ArticleResponse | null> {
     const errors = validateUpdateArticle(data);
@@ -190,22 +172,8 @@ export class ArticleResolver {
       updatedFields.text_el = data.text;
       updatedFields.text_en = text_en;
     }
-
-    if (picture) {
-      const { createReadStream, filename } = picture;
-      const imagePath = path.join(__dirname, `../../public/images/${filename}`);
-
-      await new Promise<void>((resolve, reject) => {
-        createReadStream()
-          .pipe(createWriteStream(imagePath))
-          .on('finish', () => resolve())
-          .on('error', (error) => {
-            console.error('Error writing file:', error);
-            reject(error);
-          });
-      });
-
-      updatedFields.image = `http://localhost:4000/images/${filename}`;
+    if (data.image !== undefined) {
+      updatedFields.image = data.image;
     }
 
     const result = await AppDataSource.createQueryBuilder()

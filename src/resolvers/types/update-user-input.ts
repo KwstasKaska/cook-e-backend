@@ -16,4 +16,7 @@ export class UpdateUserInput {
 
   @Field({ nullable: true })
   newPassword?: string;
+
+  @Field({ nullable: true })
+  image?: string;
 }
