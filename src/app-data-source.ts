@@ -6,7 +6,11 @@ const AppDataSource = new DataSource({
   url: process.env.DATABASE_URL,
   logging: false,
   synchronize: true,
-  ssl: { rejectUnauthorized: false },
+  // SSL μόνο σε production (Neon), όχι locally
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
   entities: [path.join(__dirname + '/entities/*/*{.js,.ts}')],
   migrations: [path.join(__dirname + '/migrations/*')],
 });
