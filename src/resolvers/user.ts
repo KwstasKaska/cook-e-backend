@@ -186,9 +186,9 @@ export class UserResolver {
           user: { id: user.id } as User,
         }).save();
       }
-    } catch (err) {
-      if ((err as any).code === '23505') {
-        if ((err as any).constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
+    } catch (err: any) {
+      if (err.code === '23505') {
+        if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
           return {
             errors: [
               {
@@ -197,9 +197,7 @@ export class UserResolver {
               },
             ],
           };
-        } else if (
-          (err as any).constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22'
-        ) {
+        } else if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
           return {
             errors: [
               {
@@ -262,7 +260,7 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async logout(@Ctx() { req, res }: MyContext) {
     return new Promise((resolve) =>
-      req.session.destroy((err) => {
+      req.session.destroy((err: any) => {
         res.clearCookie(COOKIE_NAME);
         if (err) {
           console.log(err);
@@ -339,9 +337,9 @@ export class UserResolver {
 
     try {
       await user.save();
-    } catch (err) {
-      if ((err as any).code === '23505') {
-        if ((err as any).constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
+    } catch (err: any) {
+      if (err.code === '23505') {
+        if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
           return {
             errors: [
               {
@@ -351,7 +349,7 @@ export class UserResolver {
             ],
           };
         }
-        if ((err as any).constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
+        if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
           return {
             errors: [
               {
