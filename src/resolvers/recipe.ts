@@ -75,6 +75,28 @@ export class RecipeResolver {
     });
   }
 
+  // Public recipes by chef — used on the user-facing chef profile page
+  @Query(() => [Recipe])
+  async recipesByChef(
+    @Arg('chefId', () => Int) chefId: number,
+    @Arg('limit', () => Int, { defaultValue: 6 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<Recipe[]> {
+    return Recipe.find({
+      where: { authorId: chefId },
+      relations: [
+        'recipeIngredients',
+        'recipeIngredients.ingredient',
+        'recipeIngredients.ingredient.category',
+        'steps',
+        'utensils',
+      ],
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
+  }
+
   // Chef Queries
 
   @Query(() => [Recipe])
