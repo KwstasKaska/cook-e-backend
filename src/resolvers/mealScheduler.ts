@@ -95,8 +95,6 @@ export class NutritionPlanResolver {
         };
       }
 
-      // Use nutritionist.id (NutritionistProfile.id) not req.session.userId (User.id)
-      // slot.nutritionistId stores NutritionistProfile.id — same bug class as appointment resolvers
       const approvedRequest = await AppointmentRequest.createQueryBuilder('req')
         .innerJoin('req.slot', 'slot')
         .where('req.clientId = :userId', { userId })
@@ -120,23 +118,21 @@ export class NutritionPlanResolver {
         };
       }
 
+      // Check for existing entry — upsert instead of blocking
       const existing = await MealScheduler.findOne({
         where: { user: { id: userId }, day, mealType },
-        relations: ['user'],
       });
 
-      if (existing) {
-        return {
-          errors: [
-            {
-              field: 'meal',
-              message: 'Υπάρχει ήδη πλάνο για αυτή τη μέρα και τύπο γεύματος.',
-            },
-          ],
-        };
-      }
-
       const comment_en = await translateText(comment);
+
+      if (existing) {
+        // Override: update in place
+        existing.comment_el = comment;
+        existing.comment_en = comment_en;
+        existing.nutritionist = nutritionist;
+        await existing.save();
+        return { mealScheduler: existing };
+      }
 
       const mealScheduler = MealScheduler.create({
         user,
