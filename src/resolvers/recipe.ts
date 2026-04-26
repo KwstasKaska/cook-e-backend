@@ -161,6 +161,18 @@ export class RecipeResolver {
     });
   }
 
+  @Query(() => Int)
+  @UseMiddleware(isAuth, isChef)
+  async myRecipesCount(@Ctx() { req }: MyContext): Promise<number> {
+    const chefProfile = await ChefProfile.findOne({
+      where: { user: { id: req.session.userId } },
+    });
+
+    if (!chefProfile) return 0;
+
+    return Recipe.count({ where: { authorId: chefProfile.id } });
+  }
+
   // ── Chef Mutations ─────────────────────────────────────────────────
 
   @Mutation(() => RecipeResponse)
