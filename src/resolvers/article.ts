@@ -19,6 +19,7 @@ import {
   validateUpdateArticle,
 } from '../utils/validateArticle';
 import { translateText } from '../utils/translate';
+import { UserRole } from '../entities/General/Information';
 
 @Resolver(Article)
 export class ArticleResolver {
@@ -29,16 +30,13 @@ export class ArticleResolver {
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Article[]> {
-    return AppDataSource.query(
-      `SELECT a.*,
-        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
-       FROM article a
-       INNER JOIN public.user u ON u.id = a."creatorId"
-       WHERE u.role = 'nutritionist'
-       ORDER BY a."createdAt" DESC
-       LIMIT $1 OFFSET $2`,
-      [Math.min(limit, 50), offset],
-    );
+    return Article.find({
+      relations: ['creator'],
+      where: { creator: { role: UserRole.NUTRITIONIST } },
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
   }
 
   @Query(() => [Article])
@@ -47,16 +45,16 @@ export class ArticleResolver {
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Article[]> {
-    return AppDataSource.query(
-      `SELECT a.*,
-        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
-       FROM article a
-       INNER JOIN public.user u ON u.id = a."creatorId"
-       WHERE u.role = 'nutritionist' AND u.id = $1
-       ORDER BY a."createdAt" DESC
-       LIMIT $2 OFFSET $3`,
-      [nutritionistId, Math.min(limit, 50), offset],
-    );
+    return Article.find({
+      relations: ['creator'],
+      where: {
+        creatorId: nutritionistId,
+        creator: { role: UserRole.NUTRITIONIST },
+      },
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
   }
 
   @Query(() => [Article])
@@ -64,16 +62,13 @@ export class ArticleResolver {
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Article[]> {
-    return AppDataSource.query(
-      `SELECT a.*,
-        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
-       FROM article a
-       INNER JOIN public.user u ON u.id = a."creatorId"
-       WHERE u.role = 'chef'
-       ORDER BY a."createdAt" DESC
-       LIMIT $1 OFFSET $2`,
-      [Math.min(limit, 50), offset],
-    );
+    return Article.find({
+      relations: ['creator'],
+      where: { creator: { role: UserRole.CHEF } },
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
   }
 
   @Query(() => [Article])
@@ -82,21 +77,18 @@ export class ArticleResolver {
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Article[]> {
-    return AppDataSource.query(
-      `SELECT a.*,
-        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
-       FROM article a
-       INNER JOIN public.user u ON u.id = a."creatorId"
-       WHERE u.role = 'chef' AND u.id = $1
-       ORDER BY a."createdAt" DESC
-       LIMIT $2 OFFSET $3`,
-      [chefId, Math.min(limit, 50), offset],
-    );
+    return Article.find({
+      relations: ['creator'],
+      where: { creatorId: chefId, creator: { role: UserRole.CHEF } },
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
   }
 
   @Query(() => Article, { nullable: true })
   article(@Arg('id', () => Int) id: number): Promise<Article | null> {
-    return Article.findOne({ where: { id } });
+    return Article.findOne({ where: { id }, relations: ['creator'] });
   }
 
   // ─── Nutritionist Private Queries ─────────────────────────────────
@@ -108,16 +100,13 @@ export class ArticleResolver {
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<Article[]> {
-    return AppDataSource.query(
-      `SELECT a.*,
-        json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS creator
-       FROM article a
-       INNER JOIN public.user u ON u.id = a."creatorId"
-       WHERE u.role = 'nutritionist' AND u.id = $1
-       ORDER BY a."createdAt" DESC
-       LIMIT $2 OFFSET $3`,
-      [req.session.userId, Math.min(limit, 50), offset],
-    );
+    return Article.find({
+      relations: ['creator'],
+      where: { creatorId: req.session.userId },
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
   }
 
   // ─── Mutations ────────────────────────────────────────────────────
