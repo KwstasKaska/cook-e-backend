@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -27,15 +28,14 @@ export class Step extends BaseEntity {
   @Column({ type: 'text' })
   body_en: string;
 
-  // ── Non-translatable fields ────────────────────────────────────────
+  // ── Foreign key — always required ──────────────────────────────────
 
-  /* Αυτή η στήλη χρησιμοποιείται σαν μερικό (foreign) κλειδί —
-     συσχέτιση με την οντότητα Recipe */
   @Field()
-  @Column()
+  @Column({ nullable: false })
   recipeID: number;
 
-  @ManyToOne(() => Recipe, (recipe) => recipe.steps)
+  @ManyToOne(() => Recipe, (recipe) => recipe.steps, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'recipeID' })
   recipe: Recipe;
 
   @Field(() => String)
