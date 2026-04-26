@@ -395,6 +395,9 @@ export class RecipeResolver {
       }
 
       if (data.steps !== undefined) {
+        await manager.query(`DELETE FROM recipe_step WHERE "recipeId" = $1`, [
+          recipe.id,
+        ]);
         await manager.delete(Step, { recipeID: recipe.id });
 
         const stepTranslations = await Promise.all(
@@ -466,6 +469,9 @@ export class RecipeResolver {
     if (!recipe) return false;
 
     await RecipeIngredient.delete({ recipeId: id });
+    await AppDataSource.query(`DELETE FROM recipe_step WHERE "recipeId" = $1`, [
+      id,
+    ]);
     await Step.delete({ recipeID: id });
     await Recipe.delete({ id });
 
