@@ -62,7 +62,7 @@ export const validateUpdateRecipe = (data: UpdateRecipeInput) => {
     ];
   }
 
-  if (data.ingredients !== undefined && data.ingredients.length === 3) {
+  if (data.ingredients !== undefined && data.ingredients.length < 3) {
     return [
       {
         field: 'ingredients',
