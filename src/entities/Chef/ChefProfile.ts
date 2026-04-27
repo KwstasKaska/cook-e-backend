@@ -25,8 +25,12 @@ export class ChefProfile extends BaseEntity {
   user: User;
 
   @Field(() => String, { nullable: true })
-  @Column({ nullable: true })
-  bio?: string;
+  @Column({ type: 'text', nullable: true })
+  bio_el?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'text', nullable: true })
+  bio_en?: string;
 
   @Field(() => [Recipe], { nullable: true })
   @OneToMany(() => Recipe, (recipe) => recipe.author)

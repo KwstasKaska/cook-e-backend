@@ -13,6 +13,7 @@ import { isChef } from '../middleware/isChef';
 import { MyContext } from '../types';
 import { UpdateChefProfileInput } from './types/update-chef-profile-input';
 import { ChefProfileResponse } from './types/chef-profile-object';
+import { translateText } from '../utils/translate';
 
 @Resolver(ChefProfile)
 export class ChefProfileResolver {
@@ -62,7 +63,10 @@ export class ChefProfileResolver {
       };
     }
 
-    if (data.bio !== undefined) profile.bio = data.bio;
+    if (data.bio_el !== undefined) {
+      profile.bio_el = data.bio_el;
+      profile.bio_en = await translateText(data.bio_el);
+    }
 
     try {
       const chefProfile = await profile.save();
