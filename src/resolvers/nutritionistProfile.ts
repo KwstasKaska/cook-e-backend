@@ -13,6 +13,7 @@ import { isNutr } from '../middleware/isNutr';
 import { MyContext } from '../types';
 import { UpdateNutritionistProfileInput } from './types/update-nutritionist-profile-input';
 import { NutritionistProfileResponse } from './types/nutritionist-profile-object';
+import { translateText } from '../utils/translate';
 
 @Resolver(NutritionistProfile)
 export class NutritionistProfileResolver {
@@ -69,9 +70,20 @@ export class NutritionistProfileResolver {
       };
     }
 
-    if (data.bio !== undefined) profile.bio = data.bio;
+    const [bio_en, city_en] = await Promise.all([
+      data.bio_el ? translateText(data.bio_el) : Promise.resolve(undefined),
+      data.city_el ? translateText(data.city_el) : Promise.resolve(undefined),
+    ]);
+
+    if (data.bio_el !== undefined) {
+      profile.bio_el = data.bio_el;
+      profile.bio_en = bio_en ?? profile.bio_en;
+    }
     if (data.phone !== undefined) profile.phone = data.phone;
-    if (data.city !== undefined) profile.city = data.city;
+    if (data.city_el !== undefined) {
+      profile.city_el = data.city_el;
+      profile.city_en = city_en ?? profile.city_en;
+    }
 
     try {
       const nutritionistProfile = await profile.save();

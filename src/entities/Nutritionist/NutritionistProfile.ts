@@ -26,15 +26,23 @@ export class NutritionistProfile extends BaseEntity {
 
   @Field(() => String, { nullable: true })
   @Column({ nullable: true })
-  bio?: string;
-
-  @Field(() => String, { nullable: true })
-  @Column({ nullable: true })
   phone?: string;
 
   @Field(() => String, { nullable: true })
+  @Column({ type: 'text', nullable: true })
+  bio_el?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'text', nullable: true })
+  bio_en?: string;
+
+  @Field(() => String, { nullable: true })
   @Column({ nullable: true })
-  city?: string;
+  city_el?: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
+  city_en?: string;
 
   @OneToMany(() => Appointment, (slot) => slot.nutritionistProfile)
   slots: Appointment[];
