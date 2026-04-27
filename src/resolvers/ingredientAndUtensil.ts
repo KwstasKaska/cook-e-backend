@@ -1,7 +1,6 @@
 import { Query, Resolver } from 'type-graphql';
 import { Ingredient } from '../entities/Chef/Ingredient';
 import { Utensil } from '../entities/Chef/Utensil';
-import { IngredientsCategory } from '../entities/Chef/IngredientsCategory';
 
 @Resolver()
 export class IngredientResolver {
@@ -10,15 +9,6 @@ export class IngredientResolver {
   async ingredients(): Promise<Ingredient[]> {
     return Ingredient.find({
       relations: ['category'],
-      order: { name_el: 'ASC' },
-    });
-  }
-
-  // All ingredient categories — useful for grouping in dropdowns
-  @Query(() => [IngredientsCategory])
-  async ingredientCategories(): Promise<IngredientsCategory[]> {
-    return IngredientsCategory.find({
-      relations: ['ingredients'],
       order: { name_el: 'ASC' },
     });
   }

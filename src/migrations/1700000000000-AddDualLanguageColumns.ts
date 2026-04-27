@@ -1,19 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-/**
- * Adds dual-language (_el / _en) columns to Recipe, Step, Article, MealScheduler.
- *
- * Strategy per field:
- * 1. Add the _el column (nullable)
- * 2. Copy existing data into _el
- * 3. Set _el NOT NULL
- * 4. Add _en column with empty string default (filled by app going forward)
- * 5. Drop the original single-language column
- *
- * Existing rows will have their original text preserved in _el.
- * The _en columns on existing rows will be empty strings — they get
- * populated the next time a user edits and saves that record.
- */
 export class AddDualLanguageColumns1700000000000 implements MigrationInterface {
   name = 'AddDualLanguageColumns1700000000000';
 

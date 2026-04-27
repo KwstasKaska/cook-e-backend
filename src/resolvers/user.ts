@@ -130,7 +130,6 @@ export class UserResolver {
   @Query(() => User, { nullable: true })
   async me(@Ctx() { req }: MyContext) {
     if (!req.session.userId) {
-      console.log('Not logged');
       return null;
     }
 

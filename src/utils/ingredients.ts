@@ -1,6 +1,3 @@
-// Each Greek enum stays as-is (used for el values)
-// Add a matching English enum with the same keys
-
 export enum Vegetables {
   Carrot = 'Καρότο',
   Broccoli = 'Μπρόκολο',
