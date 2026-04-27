@@ -40,10 +40,6 @@ export class RecipeRating extends BaseEntity {
   @Column({ type: 'int' })
   score!: number;
 
-  @Field(() => String, { nullable: true })
-  @Column({ type: 'text', nullable: true })
-  comment?: string;
-
   @Field(() => String)
   @CreateDateColumn()
   createdAt!: Date;

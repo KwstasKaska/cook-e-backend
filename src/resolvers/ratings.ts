@@ -79,7 +79,6 @@ export class RatingResolver {
   async rateChef(
     @Arg('chefId', () => Int) chefId: number,
     @Arg('score', () => Int) score: number,
-    @Arg('comment', () => String, { nullable: true }) comment: string,
     @Ctx() { req }: MyContext,
   ): Promise<ChefRating> {
     if (score < 1 || score > 5) {
@@ -95,7 +94,6 @@ export class RatingResolver {
 
     if (existing) {
       existing.score = score;
-      if (comment !== undefined) existing.comment = comment;
       return existing.save();
     }
 
@@ -103,7 +101,6 @@ export class RatingResolver {
       userId: req.session.userId,
       chefId,
       score,
-      comment,
     }).save();
   }
 
@@ -167,7 +164,6 @@ export class RatingResolver {
   async rateRecipe(
     @Arg('recipeId', () => Int) recipeId: number,
     @Arg('score', () => Int) score: number,
-    @Arg('comment', () => String, { nullable: true }) comment: string,
     @Ctx() { req }: MyContext,
   ): Promise<RecipeRating> {
     if (score < 1 || score > 5) {
@@ -183,7 +179,6 @@ export class RatingResolver {
 
     if (existing) {
       existing.score = score;
-      if (comment !== undefined) existing.comment = comment;
       return existing.save();
     }
 
@@ -191,7 +186,6 @@ export class RatingResolver {
       userId: req.session.userId,
       recipeId,
       score,
-      comment,
     }).save();
   }
 
