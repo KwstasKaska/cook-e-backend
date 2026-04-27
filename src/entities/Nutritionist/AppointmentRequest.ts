@@ -51,10 +51,6 @@ export class AppointmentRequest extends BaseEntity {
   })
   status!: AppointmentStatus;
 
-  @Field(() => String, { nullable: true })
-  @Column({ type: 'text', nullable: true })
-  comment?: string;
-
   @Field(() => String)
   @CreateDateColumn()
   requestedAt!: Date;

@@ -5,7 +5,4 @@ import { AppointmentRequest } from '../../entities/Nutritionist/AppointmentReque
 export class AppointmentRequestInput implements Partial<AppointmentRequest> {
   @Field(() => Int)
   slotId!: number;
-
-  @Field(() => String, { nullable: true })
-  comment?: string;
 }

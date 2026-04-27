@@ -73,7 +73,6 @@ export class AppointmentRequestResolver {
     const appointmentRequest = AppointmentRequest.create({
       slotId: data.slotId,
       clientId: req.session.userId,
-      comment: data.comment,
       status: AppointmentStatus.PENDING,
     });
 
@@ -120,8 +119,6 @@ export class AppointmentRequestResolver {
         ],
       };
     }
-
-    if (data.comment !== undefined) appointmentRequest.comment = data.comment;
 
     try {
       await appointmentRequest.save();
