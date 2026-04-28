@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+import 'reflect-metadata'; // απαραίτητο να είναι πρώτο προκειμένου να λειτουργήσει το app data source
 import * as dotenv from 'dotenv';
 dotenv.config();
 import AppDataSource from './app-data-source';
@@ -16,27 +16,27 @@ import { MyContext } from './types';
 import { buildSchema } from 'type-graphql';
 import bodyParser from 'body-parser';
 import { ArticleResolver } from './resolvers/article';
+import { AppointmentRequestResolver } from './resolvers/appointRequest';
 import { UserResolver } from './resolvers/user';
 import { graphqlUploadExpress } from 'graphql-upload-minimal';
 import { AppointmentResolver } from './resolvers/appointment';
-import { AppointmentRequestResolver } from './resolvers/appointRequest';
 import { NutritionPlanResolver } from './resolvers/mealScheduler';
-import { RecipeResolver } from './resolvers/recipe';
 import {
   IngredientResolver,
   UtensilResolver,
 } from './resolvers/ingredientAndUtensil';
+import { RecipeResolver } from './resolvers/recipe';
 import { ChefProfileResolver } from './resolvers/chefProfile';
-import { NutritionistProfileResolver } from './resolvers/nutritionistProfile';
 import { ShoppingCartResolver } from './resolvers/shoppingCart';
-import { MessagingResolver } from './resolvers/messaging';
-import { RatingResolver } from './resolvers/ratings';
+import { NutritionistProfileResolver } from './resolvers/nutritionistProfile';
 import { FavoritesResolver } from './resolvers/userFavorites';
+import { MessagingResolver } from './resolvers/messaging';
 import { CookedRecipeResolver } from './resolvers/cookedRecipe';
+import { RatingResolver } from './resolvers/ratings';
 import { RecipeSuggestionResolver } from './resolvers/recipeSuggestion';
 
 const main = async () => {
-  // In order to interact with the database and hold my db connection settings, i have to initialize dataSource
+  // Προκειμένου να συναναστρέφομαι με την βάση μου, χρειάζεται να κάνω initialize
   AppDataSource.initialize()
     .then(() => {
       console.log('Data Source has been initialized!');
@@ -45,14 +45,11 @@ const main = async () => {
       console.error('Error during Data Source initialization', err);
     });
 
-  // Let's create the express server
-  // explicit type ώστε το TypeScript να ξέρει ότι είναι Express app
+  // explicit type ώστε το TypeScript να ξέρει ότι είναι Express app, προκειμένου να δημιουργείται ένα πραγματικό port και μέσω του createserver δημιουργείται ένα http node server
   const app: Express = express();
   const httpServer = createServer(app);
 
-  // Here we will connect redis in order to make faster queries in the server side in addition with my cookie
-
-  // Redis fallback - αν δεν υπάρχει REDIS_URL χρησιμοποιούμε in-memory sessions
+  //αν δεν υπάρχει REDIS_URL χρησιμοποιούμε in-memory sessions προκειμένου να τρέχει ποιο γρήγορα μέσω redis, ουσιαστικά η διαδικασία ειναι ότι όταν δημιουργείται το session απο τον server, αυτό αποθηκεύεται στο redis και μετέπειτα αυτή η διασύνδεση στέλνει ελέγχους όπου τσεκάρει τα κλειδιά απο το cookie και το redis και καταλαβαίνει οτι αντιστοιχεί σε κάποιο session
   const RedisStore = require('connect-redis').default;
   const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
@@ -62,23 +59,23 @@ const main = async () => {
       store: redis
         ? new RedisStore({
             client: redis,
-            disableTTL: true,
-            disableTouch: true,
+            disableTTL: true, //για να μην επηρεάζει το redis το maxAge απο το cookie
+            disableTouch: true, //για να μην ανανεώνω το session στο redis σε κάθε εντολή
           })
         : undefined,
       cookie: {
-        maxAge: 1000 * 60 * 60 * 24 * 365 * 4,
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        secure: process.env.NODE_ENV === 'production',
+        maxAge: 1000 * 60 * 60 * 24 * 365 * 4, //μέγιστη διάρκεια ζωής του cookie
+        httpOnly: true, //το χρησιμοποιώ για να εμποδίζει απο επιθέσεις στο cookie(να φαίνεται μόνο στον server)
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', //πρέπει να γίνει διαχωρισμός καθώς όταν το τρέχω, το back με το front end είναι διαφορετικά domains
+        secure: process.env.NODE_ENV === 'production', //προτεικένου να δέχεται το https
       },
-      saveUninitialized: false,
-      secret: process.env.SESSION_SECRET!,
-      resave: false,
+      saveUninitialized: false, //για να μην αποηθεύεται τίποτα όταν κάποιος δεν κάνει login
+      secret: process.env.SESSION_SECRET!, //για ασφάλεια, επαληθεύεται το session και να ασφαλιστεί το cookie
+      resave: false, //για να μην αλλάξει κάτι στο session χωρίς λ'ογο, πχ ακόμα και ένα απλό scroll
     }) as express.RequestHandler,
   );
 
-  // Here i create an apollo server instance in order to create my schema and the resolvers usings typegraphql
+  //δημιουργώ ένα apolloserver προκειμένου να δημιουργήσω το schema της βάσης μου και να δηλώσω όλα τα resolvers που θα περιλαμβάνουν τα queries και τα mutations για την διασύνδεση με το frontend.
   const apolloServer = new ApolloServer<MyContext>({
     schema: await buildSchema({
       resolvers: [
@@ -104,6 +101,7 @@ const main = async () => {
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
 
+  //χρησιμοποιώ το συγκεκριμένο προκειμένου να δέχεται ο server μου αρχεία μέσω της graphql, και είναι σημαντικό να είναι πριν το ξεκίνημα του server προκειμένου να δει το req και να το επεξεργαστεί, πριν πάει στο resolver.
   app.use(
     graphqlUploadExpress({
       maxFileSize: 1000000000,
@@ -113,21 +111,19 @@ const main = async () => {
 
   app.use(express.static('public'));
 
-  // I start my server
+  //για να ξεκινήσει ο server
   await apolloServer.start();
 
+  //το χρησιμοποιώ προκειμένου να δουλεύει το secure σωστά στο cookie.
   app.set('trust proxy', true);
 
-  // I declare my cors and expressMiddleware in order for me to use apollo-express-server
+  //το δημιουργώ προκειμένου να ορίσω τι θα επιτρέπεται στα /graphql endpoints
   app.use(
     '/graphql',
     cors({
-      origin: [
-        'http://localhost:3000',
-        'https://studio.apollographql.com',
-        process.env.CORS_ORIGIN!,
-      ].filter(Boolean) as string[],
-      credentials: true,
+      // ορίζω ποια endpoints θα μπορούν να βλέπουν τον server μου, το πρώτο ειναι για τοπικά, το δεύτερο για το apollo studio που κάνω το testing πριν την διασύνδεση, καθώς και το production
+      origin: ['https://studio.apollographql.com', process.env.FRONTEND_URL!],
+      credentials: true, //χωρίς αυτό το browser δεν στέλει cookies για την διασύνδεση του back με το front
     }),
     bodyParser.json(),
     expressMiddleware(apolloServer, {
@@ -135,7 +131,7 @@ const main = async () => {
     }),
   );
 
-  // I define the port of the server
+  //δηλώνω σε ποιο port θα βλέπει ο server
   httpServer.listen(4000, () => {
     console.log('Server started on localhost:4000/graphql');
   });
