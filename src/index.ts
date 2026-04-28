@@ -117,6 +117,9 @@ const main = async () => {
   //το χρησιμοποιώ προκειμένου να δουλεύει το secure σωστά στο cookie.
   app.set('trust proxy', true);
 
+  console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+  console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
+
   //το δημιουργώ προκειμένου να ορίσω τι θα επιτρέπεται στα /graphql endpoints
   app.use(
     '/graphql',
