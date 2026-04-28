@@ -125,7 +125,8 @@ const main = async () => {
       origin: ['https://studio.apollographql.com', process.env.FRONTEND_URL!],
       credentials: true, //χωρίς αυτό το browser δεν στέλει cookies για την διασύνδεση του back με το front
     }),
-    bodyParser.json(),
+    bodyParser.json(), //προκειμένου να διαβάζει το body των αιτημάτων σαν json αρχείο
+    //προκειμένου να συνδέω τον Apollo με το Express και να δημιουργούνται τα στοιχεία που μου επιτρέπουν να χρησιμοποιώ το MyContext μέσα στους resolvers
     expressMiddleware(apolloServer, {
       context: async ({ req, res }) => ({ req, res, redis }),
     }),

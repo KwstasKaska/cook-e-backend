@@ -9,7 +9,7 @@ const AppDataSource = new DataSource({
   //SSL μόνο σε prod, όχι locally προκειμένου να μην επαληθεύσω τον server που κάνω hosting, στην προκειμένη στο neon
   ssl:
     process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
+      ? { rejectUnauthorized: false } //ουσιαστικά κάνει κρυπτογράφημένη σύνδεση, αλλά επειδή δεν ελέγχο εγώ το certificate στο production, η αυστηρή επαλήθευση που ακολουθείται για δημιουργόυσε πρόβλημα στην σύνδεση
       : false,
   entities: [path.join(__dirname + '/entities/*/*{.js,.ts}')], //δηλώνω ποιες οντότητες θα φαίνονται στην βάση και θα δημιουργούνται
   migrations: [path.join(__dirname + '/migrations/*')], //δηλώνω ποια migration, σε περίπτωση που θέλω να αλλάξω κάτι σε έναν πίνακα ή entity
