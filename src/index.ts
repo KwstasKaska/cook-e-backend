@@ -123,6 +123,7 @@ const main = async () => {
     cors({
       // ορίζω ποια endpoints θα μπορούν να βλέπουν τον server μου, το πρώτο ειναι για τοπικά, το δεύτερο για το apollo studio που κάνω το testing πριν την διασύνδεση, καθώς και το production
       origin: [
+        'http://localhost:3000',
         'https://studio.apollographql.com',
         process.env.FRONTEND_URL!,
       ].filter(Boolean) as string[],
