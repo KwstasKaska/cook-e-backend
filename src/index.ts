@@ -122,7 +122,10 @@ const main = async () => {
     '/graphql',
     cors({
       // ορίζω ποια endpoints θα μπορούν να βλέπουν τον server μου, το πρώτο ειναι για τοπικά, το δεύτερο για το apollo studio που κάνω το testing πριν την διασύνδεση, καθώς και το production
-      origin: ['https://studio.apollographql.com', process.env.FRONTEND_URL!],
+      origin: [
+        'https://studio.apollographql.com',
+        process.env.FRONTEND_URL!,
+      ].filter(Boolean) as string[],
       credentials: true, //χωρίς αυτό το browser δεν στέλει cookies για την διασύνδεση του back με το front
     }),
     bodyParser.json(), //προκειμένου να διαβάζει το body των αιτημάτων σαν json αρχείο
