@@ -51,12 +51,7 @@ const main = async () => {
 
   //αν δεν υπάρχει REDIS_URL χρησιμοποιούμε in-memory sessions προκειμένου να τρέχει ποιο γρήγορα μέσω redis, ουσιαστικά η διαδικασία ειναι ότι όταν δημιουργείται το session απο τον server, αυτό αποθηκεύεται στο redis και μετέπειτα αυτή η διασύνδεση στέλνει ελέγχους όπου τσεκάρει τα κλειδιά απο το cookie και το redis και καταλαβαίνει οτι αντιστοιχεί σε κάποιο session
   const RedisStore = require('connect-redis').default;
-  const redis = process.env.REDIS_URL
-    ? new Redis(process.env.REDIS_URL, {
-        tls: {},
-      })
-    : null;
-
+  const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
   app.use(
     session({
       name: COOKIE_NAME,
