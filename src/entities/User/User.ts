@@ -46,7 +46,6 @@ export class User extends Information {
   @OneToMany(() => CookedRecipe, (log) => log.user)
   cookedRecipes: CookedRecipe[];
 
-  // Messaging
   @OneToMany(() => Conversation, (conversation) => conversation.participant1)
   conversationsAsParticipant1: Conversation[];
 

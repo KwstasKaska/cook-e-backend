@@ -13,12 +13,13 @@ import { Recipe } from '../Chef/Recipe';
 
 @ObjectType()
 @Entity()
-@Unique(['userId', 'recipeId']) // one favorite entry per user per recipe
+@Unique(['userId', 'recipeId'])
 export class UserFavorite extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id!: number;
 
+  // το δευτερεύων κλειδί για την συσχέτιση με τον πίνακα του χρήστη
   @Field(() => Int)
   @Column()
   userId!: number;
@@ -26,6 +27,7 @@ export class UserFavorite extends BaseEntity {
   @ManyToOne(() => User, (user) => user.favorites)
   user!: User;
 
+  // το δευτερεύων κλειδί για την συσχέτιση με τον πίνακα της συνταγής
   @Field(() => Int)
   @Column()
   recipeId!: number;

@@ -15,11 +15,15 @@ import { MyContext } from '../types';
 
 @Resolver(UserFavorite)
 export class FavoritesResolver {
+  //για να επιστρέψει την λίστα από UserFavorties objects
   @Query(() => [UserFavorite])
+  // κάνουμε τους ελέγχους για να πρέπει να είναι user και authenticated
   @UseMiddleware(isAuth, isUser)
   async myFavorites(
     @Ctx() { req }: MyContext,
+    // το limit/take χρησιμοποιείται για να δείξουμε πόσα θέλουμε
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    // το offset/skip για να δείξουμε πόασ θέλουμε να παραλέιψουμε
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<UserFavorite[]> {
     return UserFavorite.find({
@@ -32,7 +36,7 @@ export class FavoritesResolver {
         'recipe.recipeIngredients.ingredient',
       ],
       order: { savedAt: 'DESC' },
-      take: Math.min(limit, 50),
+      take: Math.min(limit, 50), //για safety issues, προκειμένου να υπάρχει ένα μέγιστος αριθμός που μπορεί να ζητήσει
       skip: offset,
     });
   }
