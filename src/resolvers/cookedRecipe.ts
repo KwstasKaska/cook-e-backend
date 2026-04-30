@@ -19,7 +19,7 @@ import { NutritionalSummary } from './types/cookedRecipe-object';
 export class CookedRecipeResolver {
   @Mutation(() => CookedRecipe)
   @UseMiddleware(isAuth, isUser)
-  // ουσιαστικά δημιουργώ ενα αρχείο απο cookedrecipes σαν ημερολόγιο για το donut
+  // ουσιαστικά δημιουργώ ενα αρχείο απο cookedrecipes σαν ημερολόγιο για το donut και γι αυτό δεν έχω βάλει καποιο ελεγχο για διπλότυπο, γιατί μπορεί να την εισάγει πολλές φορές
   async logCookedRecipe(
     @Arg('recipeId', () => Int) recipeId: number,
     @Ctx() { req }: MyContext,

@@ -32,21 +32,6 @@ export class ShoppingCart extends BaseEntity {
   @ManyToOne(() => Ingredient)
   ingredient!: Ingredient;
 
-  // How much of this ingredient the user needs
-  @Field(() => String, { nullable: true })
-  @Column({ nullable: true })
-  quantity?: string;
-
-  // e.g. "g", "ml", "pieces" — free text, user decides
-  @Field(() => String, { nullable: true })
-  @Column({ nullable: true })
-  unit?: string;
-
-  // Optional note e.g. "running low" or "for moussaka"
-  @Field(() => String, { nullable: true })
-  @Column({ type: 'text', nullable: true })
-  note?: string;
-
   @Field(() => String)
   @CreateDateColumn()
   addedAt!: Date;

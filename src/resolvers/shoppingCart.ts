@@ -15,8 +15,6 @@ import { MyContext } from '../types';
 
 @Resolver(ShoppingCart)
 export class ShoppingCartResolver {
-  // ── Queries ────────────────────────────────────────────────────────
-
   @Query(() => [ShoppingCart])
   @UseMiddleware(isAuth, isUser)
   async myCart(
@@ -33,15 +31,11 @@ export class ShoppingCartResolver {
     });
   }
 
-  // ── Mutations ──────────────────────────────────────────────────────
-
   @Mutation(() => ShoppingCart)
   @UseMiddleware(isAuth, isUser)
   async addToCart(
     @Arg('ingredientId', () => Int) ingredientId: number,
-    @Arg('quantity', () => String, { nullable: true }) quantity: string,
-    @Arg('unit', () => String, { nullable: true }) unit: string,
-    @Arg('note', () => String, { nullable: true }) note: string,
+
     @Ctx() { req }: MyContext,
   ): Promise<ShoppingCart> {
     const ingredient = await Ingredient.findOne({
@@ -56,18 +50,12 @@ export class ShoppingCartResolver {
     });
 
     if (existing) {
-      if (quantity !== undefined) existing.quantity = quantity;
-      if (unit !== undefined) existing.unit = unit;
-      if (note !== undefined) existing.note = note;
       return existing.save();
     }
 
     return ShoppingCart.create({
       userId: req.session.userId,
       ingredientId,
-      quantity,
-      unit,
-      note,
     }).save();
   }
 
@@ -103,30 +91,6 @@ export class ShoppingCartResolver {
     }
 
     return results;
-  }
-
-  @Mutation(() => ShoppingCart)
-  @UseMiddleware(isAuth, isUser)
-  async updateCartItem(
-    @Arg('id', () => Int) id: number,
-    @Arg('quantity', () => String, { nullable: true }) quantity: string,
-    @Arg('unit', () => String, { nullable: true }) unit: string,
-    @Arg('note', () => String, { nullable: true }) note: string,
-    @Ctx() { req }: MyContext,
-  ): Promise<ShoppingCart> {
-    const item = await ShoppingCart.findOne({
-      where: { id, userId: req.session.userId },
-    });
-
-    if (!item) {
-      throw new Error('Το αντικείμενο δεν βρέθηκε στο καλάθι.');
-    }
-
-    if (quantity !== undefined) item.quantity = quantity;
-    if (unit !== undefined) item.unit = unit;
-    if (note !== undefined) item.note = note;
-
-    return item.save();
   }
 
   @Mutation(() => Boolean)
