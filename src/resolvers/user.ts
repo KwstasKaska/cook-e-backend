@@ -364,6 +364,10 @@ export class UserResolver {
       const convos = await manager.find(Conversation, {
         where: [{ participant1Id: userId }, { participant2Id: userId }],
       });
+      await manager.query(`DELETE FROM message WHERE "senderId" = $1`, [
+        userId,
+      ]);
+
       if (convos.length > 0) {
         const convoIds = convos.map((c) => c.id);
         await manager.query(
