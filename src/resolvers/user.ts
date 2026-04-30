@@ -442,23 +442,31 @@ export class UserResolver {
         where: { user: { id: userId } },
       });
       if (nutrProfile) {
+        console.log('[deleteUser] nutrProfile id:', nutrProfile.id);
+
         await manager.query(
           `DELETE FROM meal_scheduler WHERE "nutritionistId" = $1`,
           [nutrProfile.id],
         );
+        console.log('[deleteUser] meal_scheduler deleted');
+
         await manager.query(
           `DELETE FROM appointment_request WHERE "slotId" IN (
-          SELECT id FROM appointment WHERE "nutritionistId" = $1
-        )`,
+      SELECT id FROM appointment WHERE "nutritionistId" = $1
+    )`,
           [nutrProfile.id],
         );
+        console.log('[deleteUser] appointment_request deleted');
+
         await manager.query(
           `DELETE FROM appointment WHERE "nutritionistId" = $1`,
           [nutrProfile.id],
         );
-        await manager.delete(NutritionistProfile, { id: nutrProfile.id });
-      }
+        console.log('[deleteUser] appointment deleted');
 
+        await manager.delete(NutritionistProfile, { id: nutrProfile.id });
+        console.log('[deleteUser] nutrProfile deleted');
+      }
       await manager.delete(User, { id: userId });
     });
 
