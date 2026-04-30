@@ -452,14 +452,14 @@ export class UserResolver {
 
         await manager.query(
           `DELETE FROM appointment_request WHERE "slotId" IN (
-      SELECT id FROM appointment WHERE "nutritionistId" = $1
-    )`,
+    SELECT id FROM appointment WHERE "nutritionistId" = $1 OR "nutritionistProfileId" = $1
+  )`,
           [nutrProfile.id],
         );
         console.log('[deleteUser] appointment_request deleted');
 
         await manager.query(
-          `DELETE FROM appointment WHERE "nutritionistId" = $1`,
+          `DELETE FROM appointment WHERE "nutritionistId" = $1 OR "nutritionistProfileId" = $1`,
           [nutrProfile.id],
         );
         console.log('[deleteUser] appointment deleted');
