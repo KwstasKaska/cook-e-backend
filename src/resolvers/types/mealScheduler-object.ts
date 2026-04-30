@@ -1,4 +1,3 @@
-// types/MealPlanResponse.ts
 import { Field, ObjectType } from 'type-graphql';
 import { MealScheduler } from '../../entities/Nutritionist/MealScheduler';
 import { FieldError } from './field-error';

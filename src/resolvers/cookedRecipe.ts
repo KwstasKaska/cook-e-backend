@@ -1,11 +1,8 @@
 import {
   Arg,
   Ctx,
-  Field,
-  Float,
   Int,
   Mutation,
-  ObjectType,
   Query,
   Resolver,
   UseMiddleware,
@@ -16,29 +13,13 @@ import { isAuth } from '../middleware/isAuth';
 import { isUser } from '../middleware/isUser';
 import { MyContext } from '../types';
 import AppDataSource from '../app-data-source';
-
-@ObjectType()
-class NutritionalSummary {
-  @Field(() => Float, { nullable: true })
-  totalCalories?: number;
-
-  @Field(() => Float, { nullable: true })
-  totalProtein?: number;
-
-  @Field(() => Float, { nullable: true })
-  totalCarbs?: number;
-
-  @Field(() => Float, { nullable: true })
-  totalFat?: number;
-
-  @Field(() => Int)
-  cookCount: number;
-}
+import { NutritionalSummary } from './types/cookedRecipe-object';
 
 @Resolver()
 export class CookedRecipeResolver {
   @Mutation(() => CookedRecipe)
   @UseMiddleware(isAuth, isUser)
+  // ουσιαστικά δημιουργώ ενα αρχείο απο cookedrecipes σαν ημερολόγιο για το donut
   async logCookedRecipe(
     @Arg('recipeId', () => Int) recipeId: number,
     @Ctx() { req }: MyContext,
@@ -56,6 +37,7 @@ export class CookedRecipeResolver {
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isUser)
+  // για να σβήσω την μαγειρεμένη συνταγή απο την λίστα, ιδια συνθήκη ελέγχω το id του χρήστη και της μαγειρεμένης συνταγής, και την αφαιρώ απο την λίστα
   async deleteCookLog(
     @Arg('id', () => Int) id: number,
     @Ctx() { req }: MyContext,
@@ -72,6 +54,7 @@ export class CookedRecipeResolver {
 
   @Query(() => [CookedRecipe])
   @UseMiddleware(isAuth, isUser)
+  // για να δώ ολες τις αποθηκευμένες συνταγές μου, χρησιμοποιώ και pagination με limit/offset προκειμένου να υπάρχει ενα safety net.
   async myCookedRecipes(
     @Ctx() { req }: MyContext,
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
@@ -86,9 +69,9 @@ export class CookedRecipeResolver {
     });
   }
 
-  // 7-day nutritional summary — no pagination needed, it's always a single row
   @Query(() => NutritionalSummary)
   @UseMiddleware(isAuth, isUser)
+  // στην προκειμένη θελω να επιστρέψω ενα object στο οποίο θα αναγράφονται όλες οι θερμίδες και οι υποκατηγορίες τους, χρησιμοποιώ sql query λόγω των sum και count που υπάρχουν καθώς το typeorm δεν έχει κάποια ιδιότητα να τα αναγνωρίζει. επίσηςτα δηλώνω ωσ ::int κλπ επειδή μου έβγαζε error, τα εμφανιζε σαν strings και όχι σαν αριθμούς με αποτέλεσμα να πρέπει να τα δηλώσω χειροκίνητα.
   async myNutritionalSummary(
     @Ctx() { req }: MyContext,
   ): Promise<NutritionalSummary> {
@@ -107,11 +90,12 @@ export class CookedRecipeResolver {
       `,
       [req.session.userId],
     );
+    // στο where clause, παίρνω τις συναρτήσεις απο το postgresql που υπάρχουν ηδη και με βοηθάνε να ορίσω χρονικά το σήμερα με την αφαίρεση του χρονικού διαστήματος 7 ημερών
 
-    const row = rows[0];
+    const row = rows[0]; // επιστρέφεται πάντα ενα row ακόμα κι όταν ειναι null
 
     return {
-      cookCount: row.cookCount ?? 0,
+      cookCount: row.cookCount ?? 0, //αν το row.cookcount είναι null ή undefined πάρε το 0, το χρησιμοποιώ σαν safety net
       totalCalories: row.totalCalories ?? 0,
       totalProtein: row.totalProtein ?? 0,
       totalCarbs: row.totalCarbs ?? 0,
