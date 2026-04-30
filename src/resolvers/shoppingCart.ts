@@ -17,6 +17,7 @@ import { MyContext } from '../types';
 export class ShoppingCartResolver {
   @Query(() => [ShoppingCart])
   @UseMiddleware(isAuth, isUser)
+  // Με την χρήση pagination, κάνουμε join τους πίνακες του cart με το recipe και έτσι τραβάμε τα στοιχεία που έχουμε στο καλάθι μας
   async myCart(
     @Ctx() { req }: MyContext,
     @Arg('limit', () => Int, { defaultValue: 50 }) limit: number,
@@ -24,9 +25,9 @@ export class ShoppingCartResolver {
   ): Promise<ShoppingCart[]> {
     return ShoppingCart.find({
       where: { userId: req.session.userId },
-      relations: ['ingredient', 'ingredient.category'],
+      relations: ['ingredient'],
       order: { addedAt: 'DESC' },
-      take: Math.min(limit, 100),
+      take: Math.min(limit, 60),
       skip: offset,
     });
   }
@@ -35,7 +36,6 @@ export class ShoppingCartResolver {
   @UseMiddleware(isAuth, isUser)
   async addToCart(
     @Arg('ingredientId', () => Int) ingredientId: number,
-
     @Ctx() { req }: MyContext,
   ): Promise<ShoppingCart> {
     const ingredient = await Ingredient.findOne({
@@ -62,11 +62,13 @@ export class ShoppingCartResolver {
   @Mutation(() => [ShoppingCart])
   @UseMiddleware(isAuth, isUser)
   async addManyToCart(
+    // ουσιαστικά χρησιμοποιώ στο arg πολλά ingredientIds προκειμένου να κάνω λούπα και να κάνω έλεγχο μετά αν υπάρχει ήδη στο καλαθι, είτε αν δεν υπάρχει σαν υλικό, είτε αν θέλω να προσθέσω ενα που δεν υπάρχει, για να κάνω bulk insert υλικά στο καλάθι μου
     @Arg('ingredientIds', () => [Int]) ingredientIds: number[],
     @Ctx() { req }: MyContext,
   ): Promise<ShoppingCart[]> {
-    const results: ShoppingCart[] = [];
+    const results: ShoppingCart[] = []; //αρχικοποιώ την λίστα μου γιατί μου έβγαζε error αν δεν την αρχικοποιούσα, οπότε ξεκινάω με κενή λίστα
 
+    // δημιουργώ την λούπα για να κάνει τον έλεγχο για κάθε υλικό που θέλω να προσθέσω
     for (const ingredientId of ingredientIds) {
       const ingredient = await Ingredient.findOne({
         where: { id: ingredientId },
@@ -109,6 +111,7 @@ export class ShoppingCartResolver {
     return true;
   }
 
+  // ουσιαστικά ειναι επικίνδυνο να κάνω σκέτο delete στο production αλλά στην προκειμένη το έκανα για να διαγράφει μόνο τα δεδομένα του συγκεκριμένου χρήστη που το ζητάει
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isUser)
   async clearCart(@Ctx() { req }: MyContext): Promise<boolean> {
