@@ -52,8 +52,6 @@ export class Recipe extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  // ── Translatable fields ────────────────────────────────────────────
-
   @Field(() => String)
   @Column()
   title_el: string;
@@ -77,8 +75,6 @@ export class Recipe extends BaseEntity {
   @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   chefComment_en?: string;
-
-  // ── Non-translatable fields ────────────────────────────────────────
 
   @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
@@ -108,8 +104,6 @@ export class Recipe extends BaseEntity {
   @Column({ type: 'enum', enum: RecipeCategory, nullable: true })
   category?: RecipeCategory;
 
-  // ── Macro / nutritional fields ─────────────────────────────────────
-
   @Field(() => Float, { nullable: true })
   @Column({ type: 'float', nullable: true })
   caloriesTotal?: number;
@@ -125,8 +119,6 @@ export class Recipe extends BaseEntity {
   @Field(() => Float, { nullable: true })
   @Column({ type: 'float', nullable: true })
   fat?: number;
-
-  // ── Relations ──────────────────────────────────────────────────────
 
   @Field(() => [RecipeIngredient], { nullable: true })
   @OneToMany(

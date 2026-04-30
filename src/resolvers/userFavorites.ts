@@ -28,13 +28,8 @@ export class FavoritesResolver {
   ): Promise<UserFavorite[]> {
     return UserFavorite.find({
       where: { userId: req.session.userId },
-      relations: [
-        'recipe',
-        'recipe.author',
-        'recipe.author.user',
-        'recipe.recipeIngredients',
-        'recipe.recipeIngredients.ingredient',
-      ],
+      // για να γίνονται JOIN οι πίνακες.
+      relations: ['recipe', 'recipe.author', 'recipe.author.user'],
       order: { savedAt: 'DESC' },
       take: Math.min(limit, 50), //για safety issues, προκειμένου να υπάρχει ένα μέγιστος αριθμός που μπορεί να ζητήσει
       skip: offset,
@@ -44,26 +39,30 @@ export class FavoritesResolver {
   @Mutation(() => UserFavorite)
   @UseMiddleware(isAuth, isUser)
   async saveRecipe(
+    // βάζω σε argument το recipeId που θέλω να εισάγω για να αποθηκεύω την συσκεκριμένη συνταγή
     @Arg('recipeId', () => Int) recipeId: number,
     @Ctx() { req }: MyContext,
   ): Promise<UserFavorite> {
+    // προκειμένου να ελέγξω αν υπάρχει συνταγή
     const recipe = await Recipe.findOne({ where: { id: recipeId } });
     if (!recipe) {
       throw new Error('Η συνταγή δεν βρέθηκε.');
     }
-
+    // αν υπάρχει συνταγή, την αποθηκεύω και ελέγχω να μην την αποθηκεύσω δύο φορές
     const existing = await UserFavorite.findOne({
       where: { userId: req.session.userId, recipeId },
     });
 
     if (existing) return existing;
 
+    // δημιουργώ και αποθηκεύω την συνταγή που θέλω να βάλω στα αγαπημένα
     return UserFavorite.create({
       userId: req.session.userId,
       recipeId,
     }).save();
   }
 
+  // επιστρέφεται boolean αν υπάρχει ή οχι και διαγράφεται
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isUser)
   async unsaveRecipe(
@@ -73,9 +72,9 @@ export class FavoritesResolver {
     const favorite = await UserFavorite.findOne({
       where: { userId: req.session.userId, recipeId },
     });
-
+    // έλεγχος για αν υπαρχει η συνταγή
     if (!favorite) return false;
-
+    // προκειμένου να αφαιρέσω την συνταγή απο τα αγαπημένα
     await UserFavorite.remove(favorite);
     return true;
   }
@@ -89,6 +88,7 @@ export class FavoritesResolver {
     const favorite = await UserFavorite.findOne({
       where: { userId: req.session.userId, recipeId },
     });
+    // με τα !! ουσιαστικά μετατρέπω το object σε boolean, αν βρεθεί η συνταγή true αλλιώς false
     return !!favorite;
   }
 }
