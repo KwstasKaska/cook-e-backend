@@ -142,7 +142,6 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async register(
     @Arg('options') options: RegisterUserInput,
-    @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
     const errors = validateRegister(options);
     if (errors) {
