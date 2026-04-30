@@ -199,8 +199,6 @@ export class UserResolver {
       }
     }
 
-    req.session.userId = user.id;
-    req.session.userRole = user.role;
     return { user };
   }
 

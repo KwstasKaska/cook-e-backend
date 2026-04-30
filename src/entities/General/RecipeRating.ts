@@ -14,7 +14,7 @@ import { Recipe } from '../Chef/Recipe';
 
 @ObjectType()
 @Entity()
-@Unique(['userId', 'recipeId']) // one rating per user per recipe
+@Unique(['userId', 'recipeId'])
 export class RecipeRating extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
