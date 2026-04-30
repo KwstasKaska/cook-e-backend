@@ -25,6 +25,9 @@ import {
 } from '../utils/validateRecipe';
 import { In } from 'typeorm';
 import { translateText } from '../utils/translate';
+import { RecipeRating } from '../entities/General/RecipeRating';
+import { UserFavorite } from '../entities/User/UserFavorite';
+import { CookedRecipe } from '../entities/User/CookedRecipe';
 
 @Resolver(Recipe)
 export class RecipeResolver {
@@ -473,6 +476,9 @@ export class RecipeResolver {
       id,
     ]);
     await Step.delete({ recipeID: id });
+    await RecipeRating.delete({ recipeId: id });
+    await UserFavorite.delete({ recipeId: id });
+    await CookedRecipe.delete({ recipeId: id });
     await Recipe.delete({ id });
 
     return true;
