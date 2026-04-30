@@ -471,6 +471,9 @@ export class UserResolver {
         await manager.delete(NutritionistProfile, { id: nutrProfile.id });
         console.log('[deleteUser] nutrProfile deleted');
       }
+      await manager.query(`DELETE FROM nutritionist WHERE "userId" = $1`, [
+        userId,
+      ]);
       await manager.delete(User, { id: userId });
     });
 
