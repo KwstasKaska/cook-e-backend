@@ -25,6 +25,8 @@ import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfil
 import { MealScheduler } from '../entities/Nutritionist/MealScheduler';
 import { ChefProfile } from '../entities/Chef/ChefProfile';
 import { UpdateUserInput } from './types/update-user-input';
+import { Conversation } from '../entities/Messsaging/Conversation';
+import { Recipe } from '../entities/Chef/Recipe';
 
 @Resolver(User)
 export class UserResolver {
@@ -347,5 +349,119 @@ export class UserResolver {
     }
 
     return { user };
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async deleteUser(@Ctx() { req, res }: MyContext): Promise<boolean> {
+    const userId = req.session.userId;
+    if (!userId) return false;
+
+    const user = await User.findOne({ where: { id: userId } });
+    if (!user) return false;
+
+    await AppDataSource.transaction(async (manager) => {
+      const convos = await manager.find(Conversation, {
+        where: [{ participant1Id: userId }, { participant2Id: userId }],
+      });
+      if (convos.length > 0) {
+        const convoIds = convos.map((c) => c.id);
+        await manager.query(
+          `DELETE FROM message WHERE "conversationId" = ANY($1)`,
+          [convoIds],
+        );
+        await manager.query(`DELETE FROM conversation WHERE id = ANY($1)`, [
+          convoIds,
+        ]);
+      }
+
+      // User-side data
+      await manager.query(`DELETE FROM shopping_cart WHERE "userId" = $1`, [
+        userId,
+      ]);
+      await manager.query(`DELETE FROM user_favorite WHERE "userId" = $1`, [
+        userId,
+      ]);
+      await manager.query(`DELETE FROM cooked_recipe WHERE "userId" = $1`, [
+        userId,
+      ]);
+      await manager.query(`DELETE FROM chef_rating WHERE "userId" = $1`, [
+        userId,
+      ]);
+      await manager.query(`DELETE FROM recipe_rating WHERE "userId" = $1`, [
+        userId,
+      ]);
+      await manager.query(
+        `DELETE FROM appointment_request WHERE "clientId" = $1`,
+        [userId],
+      );
+      await manager.query(`DELETE FROM meal_scheduler WHERE "userId" = $1`, [
+        userId,
+      ]);
+      await manager.query(`DELETE FROM article WHERE "creatorId" = $1`, [
+        userId,
+      ]);
+
+      // Chef-specific cleanup
+      const chefProfile = await manager.findOne(ChefProfile, {
+        where: { user: { id: userId } },
+      });
+      if (chefProfile) {
+        const recipes = await manager.find(Recipe, {
+          where: { authorId: chefProfile.id },
+        });
+        for (const recipe of recipes) {
+          await manager.query(
+            `DELETE FROM recipe_ingredient WHERE "recipeId" = $1`,
+            [recipe.id],
+          );
+          await manager.query(`DELETE FROM recipe_step WHERE "recipeId" = $1`, [
+            recipe.id,
+          ]);
+          await manager.query(
+            `DELETE FROM recipe_rating WHERE "recipeId" = $1`,
+            [recipe.id],
+          );
+          await manager.query(
+            `DELETE FROM user_favorite WHERE "recipeId" = $1`,
+            [recipe.id],
+          );
+          await manager.query(
+            `DELETE FROM cooked_recipe WHERE "recipeId" = $1`,
+            [recipe.id],
+          );
+        }
+        await manager.query(`DELETE FROM recipe WHERE "authorId" = $1`, [
+          chefProfile.id,
+        ]);
+        await manager.query(`DELETE FROM chef_rating WHERE "chefId" = $1`, [
+          chefProfile.id,
+        ]);
+        await manager.delete(ChefProfile, { id: chefProfile.id });
+      }
+
+      const nutrProfile = await manager.findOne(NutritionistProfile, {
+        where: { user: { id: userId } },
+      });
+      if (nutrProfile) {
+        await manager.query(
+          `DELETE FROM appointment WHERE "nutritionistId" = $1`,
+          [nutrProfile.id],
+        );
+        await manager.delete(NutritionistProfile, { id: nutrProfile.id });
+      }
+
+      await manager.delete(User, { id: userId });
+    });
+
+    // Destroy session
+    await new Promise<void>((resolve) =>
+      req.session.destroy(() => {
+        res.clearCookie(COOKIE_NAME);
+        resolve();
+      }),
+    );
+
+    return true;
   }
 }

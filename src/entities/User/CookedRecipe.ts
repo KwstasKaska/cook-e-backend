@@ -32,8 +32,6 @@ export class CookedRecipe extends BaseEntity {
   @ManyToOne(() => Recipe, (recipe) => recipe.cookedLogs)
   recipe!: Recipe;
 
-  // No unique constraint — same recipe can be logged multiple times
-  // Each entry = one cook session, macros count once per entry
   @Field(() => String)
   @CreateDateColumn()
   cookedAt!: Date;
