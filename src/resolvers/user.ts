@@ -375,7 +375,6 @@ export class UserResolver {
         ]);
       }
 
-      // User-side data
       await manager.query(`DELETE FROM shopping_cart WHERE "userId" = $1`, [
         userId,
       ]);
@@ -402,7 +401,6 @@ export class UserResolver {
         userId,
       ]);
 
-      // Chef-specific cleanup
       const chefProfile = await manager.findOne(ChefProfile, {
         where: { user: { id: userId } },
       });
@@ -445,6 +443,16 @@ export class UserResolver {
       });
       if (nutrProfile) {
         await manager.query(
+          `DELETE FROM meal_scheduler WHERE "nutritionistId" = $1`,
+          [nutrProfile.id],
+        );
+        await manager.query(
+          `DELETE FROM appointment_request WHERE "slotId" IN (
+          SELECT id FROM appointment WHERE "nutritionistId" = $1
+        )`,
+          [nutrProfile.id],
+        );
+        await manager.query(
           `DELETE FROM appointment WHERE "nutritionistId" = $1`,
           [nutrProfile.id],
         );
@@ -454,7 +462,6 @@ export class UserResolver {
       await manager.delete(User, { id: userId });
     });
 
-    // Destroy session
     await new Promise<void>((resolve) =>
       req.session.destroy(() => {
         res.clearCookie(COOKIE_NAME);
