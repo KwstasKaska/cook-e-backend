@@ -19,8 +19,6 @@ import AppDataSource from '../app-data-source';
 
 @Resolver()
 export class RatingResolver {
-  // ── Chef ratings ───────────────────────────────────────────────────
-
   @Query(() => [ChefRating])
   async chefRatings(
     @Arg('chefId', () => Int) chefId: number,
@@ -130,8 +128,6 @@ export class RatingResolver {
       where: { userId: req.session.userId, chefId },
     });
   }
-
-  // ── Recipe ratings ─────────────────────────────────────────────────
 
   @Query(() => [RecipeRating])
   async recipeRatings(
