@@ -203,38 +203,34 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('usernameOrEmail') usernameOrEmail: string,
+    @Arg('email') email: string,
     @Arg('password') password: string,
     @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
-    const user = await User.findOne(
-      usernameOrEmail.includes('@')
-        ? { where: { email: usernameOrEmail } }
-        : { where: { username: usernameOrEmail } },
-    );
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return {
         errors: [
           {
-            field: 'usernameOrEmail',
-            message: 'Το όνομα χρήστη ή το email δεν υπάρχει',
+            field: 'email',
+            message: 'Δεν βρέθηκε λογαριασμός με αυτό το email.',
           },
         ],
       };
     }
-    const valid = await argon2.verify(user!.password, password);
+    const valid = await argon2.verify(user.password, password);
     if (!valid) {
       return {
         errors: [
           {
             field: 'password',
-            message: 'Λανθασμένος Κωδικός',
+            message: 'Λανθασμένος κωδικός.',
           },
         ],
       };
     }
 
-    req.session.userId = user!.id;
+    req.session.userId = user.id;
     req.session.userRole = user.role;
 
     return { user } as any;
@@ -328,16 +324,6 @@ export class UserResolver {
               {
                 field: 'username',
                 message: 'Το όνομα χρησιμοποιείται από άλλον χρήστη.',
-              },
-            ],
-          };
-        }
-        if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
-          return {
-            errors: [
-              {
-                field: 'email',
-                message: 'Το email χρησιμοποιείται από άλλον χρήστη.',
               },
             ],
           };
