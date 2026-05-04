@@ -2,6 +2,7 @@ import {
   Arg,
   Ctx,
   FieldResolver,
+  Int,
   Mutation,
   Query,
   Resolver,
@@ -27,6 +28,7 @@ import { ChefProfile } from '../entities/Chef/ChefProfile';
 import { UpdateUserInput } from './types/update-user-input';
 import { Conversation } from '../entities/Messsaging/Conversation';
 import { Recipe } from '../entities/Chef/Recipe';
+import { UserRole } from '../entities/General/Information';
 
 @Resolver(User)
 export class UserResolver {
@@ -36,6 +38,20 @@ export class UserResolver {
       return user.email;
     }
     return '';
+  }
+
+  @Query(() => [User])
+  @UseMiddleware(isAuth)
+  async users(
+    @Arg('limit', () => Int, { defaultValue: 20 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<User[]> {
+    return User.find({
+      where: { role: UserRole.USER },
+      order: { username: 'ASC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
   }
 
   @Mutation(() => UserResponse)
