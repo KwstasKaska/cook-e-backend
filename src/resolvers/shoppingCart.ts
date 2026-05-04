@@ -18,6 +18,8 @@ export class ShoppingCartResolver {
   @Query(() => [ShoppingCart])
   @UseMiddleware(isAuth, isUser)
   // Με την χρήση pagination, κάνουμε join τους πίνακες του cart με το recipe και έτσι τραβάμε τα στοιχεία που έχουμε στο καλάθι μας
+  @Query(() => [ShoppingCart])
+  @UseMiddleware(isAuth, isUser)
   async myCart(
     @Ctx() { req }: MyContext,
     @Arg('limit', () => Int, { defaultValue: 50 }) limit: number,
@@ -25,13 +27,12 @@ export class ShoppingCartResolver {
   ): Promise<ShoppingCart[]> {
     return ShoppingCart.find({
       where: { userId: req.session.userId },
-      relations: ['ingredient'],
+      relations: ['ingredient', 'ingredient.category'],
       order: { addedAt: 'DESC' },
       take: Math.min(limit, 60),
       skip: offset,
     });
   }
-
   @Mutation(() => ShoppingCart)
   @UseMiddleware(isAuth, isUser)
   async addToCart(
@@ -47,16 +48,20 @@ export class ShoppingCartResolver {
 
     const existing = await ShoppingCart.findOne({
       where: { userId: req.session.userId, ingredientId },
+      relations: ['ingredient', 'ingredient.category'],
     });
 
-    if (existing) {
-      return existing.save();
-    }
+    if (existing) return existing;
 
-    return ShoppingCart.create({
+    const item = await ShoppingCart.create({
       userId: req.session.userId,
       ingredientId,
     }).save();
+
+    return ShoppingCart.findOne({
+      where: { id: item.id },
+      relations: ['ingredient', 'ingredient.category'],
+    }) as Promise<ShoppingCart>;
   }
 
   @Mutation(() => [ShoppingCart])
