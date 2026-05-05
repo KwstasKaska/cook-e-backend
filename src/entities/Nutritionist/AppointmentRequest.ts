@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   Entity,
+  JoinColumn,
 } from 'typeorm';
 import { User } from '../User/User';
 import { Appointment } from './Appointment';
@@ -32,7 +33,10 @@ export class AppointmentRequest extends BaseEntity {
   slotId!: number;
 
   @Field(() => Appointment, { nullable: true })
-  @ManyToOne(() => Appointment, (slot) => slot.requests)
+  @ManyToOne(() => Appointment, (slot) => slot.requests, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'slotId' })
   slot!: Appointment;
 
   @Field()

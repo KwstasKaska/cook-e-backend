@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -133,6 +134,7 @@ export class Recipe extends BaseEntity {
 
   @Field(() => ChefProfile, { nullable: true })
   @ManyToOne(() => ChefProfile, (author) => author.recipes)
+  @JoinColumn({ name: 'authorId' })
   author: ChefProfile;
 
   @Field()

@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -16,8 +17,6 @@ export class Article extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
   id!: number;
-
-  // ── Translatable fields ────────────────────────────────────────────
 
   @Field(() => String)
   @Column()
@@ -35,8 +34,6 @@ export class Article extends BaseEntity {
   @Column({ type: 'text' })
   text_en!: string;
 
-  // ── Non-translatable fields
-
   @Field(() => String)
   @Column()
   image: string;
@@ -47,6 +44,7 @@ export class Article extends BaseEntity {
 
   @Field(() => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.articles)
+  @JoinColumn({ name: 'creatorId' })
   creator: User;
 
   @Field(() => String)

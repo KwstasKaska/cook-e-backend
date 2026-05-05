@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -22,6 +23,7 @@ export class ShoppingCart extends BaseEntity {
   userId!: number;
 
   @ManyToOne(() => User, (user) => user.cartItems)
+  @JoinColumn({ name: 'userId' })
   user!: User;
 
   @Field(() => Int)
@@ -30,6 +32,7 @@ export class ShoppingCart extends BaseEntity {
 
   @Field(() => Ingredient, { nullable: true })
   @ManyToOne(() => Ingredient)
+  @JoinColumn({ name: 'ingredientId' })
   ingredient!: Ingredient;
 
   @Field(() => String)

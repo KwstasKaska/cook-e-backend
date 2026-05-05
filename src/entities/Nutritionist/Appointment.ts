@@ -3,6 +3,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -34,6 +35,7 @@ export class Appointment extends BaseEntity {
   nutritionistId: number;
 
   @ManyToOne(() => NutritionistProfile, (nutritionist) => nutritionist.slots)
+  @JoinColumn({ name: 'nutritionistId' })
   nutritionistProfile: NutritionistProfile;
 
   @OneToMany(() => AppointmentRequest, (request) => request.slot)

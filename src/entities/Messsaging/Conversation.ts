@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -21,6 +22,7 @@ export class Conversation extends BaseEntity {
 
   @Field(() => User)
   @ManyToOne(() => User, (user) => user.conversationsAsParticipant1)
+  @JoinColumn({ name: 'participant1Id' })
   participant1: User;
 
   @Field(() => Int)
@@ -29,6 +31,7 @@ export class Conversation extends BaseEntity {
 
   @Field(() => User)
   @ManyToOne(() => User, (user) => user.conversationsAsParticipant2)
+  @JoinColumn({ name: 'participant2Id' })
   participant2: User;
 
   @Field(() => Int)

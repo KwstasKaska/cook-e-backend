@@ -24,9 +24,6 @@ import {
 import { AppointmentResponse } from './types/appointment-object';
 import { validateAppointments } from '../utils/validateAppointment';
 
-// ── Helper ─────────────────────────────────────────────────────────────────
-// appointment.nutritionistId stores NutritionistProfile.id, NOT User.id.
-// Every guarded resolver must resolve the profile id first via this helper.
 async function resolveProfileId(
   userId: number | undefined,
 ): Promise<number | null> {
@@ -39,8 +36,6 @@ async function resolveProfileId(
 
 @Resolver(Appointment)
 export class AppointmentResolver {
-  // ── Queries ──────────────────────────────────────────────────────────────
-
   @Query(() => [Appointment])
   @UseMiddleware(isAuth, isNutr)
   async getMyAppointments(
@@ -68,7 +63,6 @@ export class AppointmentResolver {
     return AppDataSource.query(query, params);
   }
 
-  // Public — available slots for a given nutritionist (no auth required)
   @Query(() => [Appointment])
   async availableSlots(
     @Arg('nutritionistId', () => Int) nutritionistId: number,
@@ -81,8 +75,6 @@ export class AppointmentResolver {
       order: { date: 'ASC', time: 'ASC' },
     });
   }
-
-  // ── Mutations
 
   @Mutation(() => AppointmentResponse)
   @UseMiddleware(isAuth, isNutr)

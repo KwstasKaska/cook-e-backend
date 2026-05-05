@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -18,6 +19,7 @@ export class Message extends BaseEntity {
   id!: number;
 
   @ManyToOne(() => Conversation, (conversation) => conversation.messages)
+  @JoinColumn({ name: 'conversationId' })
   conversation: Conversation;
 
   @Field(() => Int)
@@ -26,6 +28,7 @@ export class Message extends BaseEntity {
 
   @Field(() => User)
   @ManyToOne(() => User, (user) => user.sentMessages)
+  @JoinColumn({ name: 'senderId' })
   sender: User;
 
   @Field(() => Int)

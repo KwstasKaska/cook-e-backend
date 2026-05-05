@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
@@ -25,6 +26,7 @@ export class UserFavorite extends BaseEntity {
   userId!: number;
 
   @ManyToOne(() => User, (user) => user.favorites)
+  @JoinColumn({ name: 'userId' })
   user!: User;
 
   // το δευτερεύων κλειδί για την συσχέτιση με τον πίνακα της συνταγής
@@ -34,6 +36,7 @@ export class UserFavorite extends BaseEntity {
 
   @Field(() => Recipe, { nullable: true })
   @ManyToOne(() => Recipe, (recipe) => recipe.favoritedBy)
+  @JoinColumn({ name: 'recipeId' })
   recipe!: Recipe;
 
   @Field(() => String)

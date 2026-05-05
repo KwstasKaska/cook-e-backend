@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
@@ -26,6 +27,7 @@ export class ChefRating extends BaseEntity {
 
   @Field(() => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.chefRatings)
+  @JoinColumn({ name: 'userId' })
   user!: User;
 
   @Field(() => Int)
@@ -33,9 +35,9 @@ export class ChefRating extends BaseEntity {
   chefId!: number;
 
   @ManyToOne(() => ChefProfile, (chef) => chef.ratings)
+  @JoinColumn({ name: 'chefId' })
   chef!: ChefProfile;
 
-  // 1–5 stars
   @Field(() => Int)
   @Column({ type: 'int' })
   score!: number;
