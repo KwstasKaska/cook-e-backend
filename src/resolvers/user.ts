@@ -226,23 +226,13 @@ export class UserResolver {
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return {
-        errors: [
-          {
-            field: 'email',
-            message: 'Δεν βρέθηκε λογαριασμός με αυτό το email.',
-          },
-        ],
+        errors: [{ field: 'email', message: 'error.email_not_found' }],
       };
     }
     const valid = await argon2.verify(user.password, password);
     if (!valid) {
       return {
-        errors: [
-          {
-            field: 'password',
-            message: 'Λανθασμένος κωδικός.',
-          },
-        ],
+        errors: [{ field: 'password', message: 'error.wrong_password' }],
       };
     }
 
