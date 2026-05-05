@@ -4,81 +4,35 @@ import {
 } from '../resolvers/types/recipe-input';
 
 export const validateCreateRecipe = (data: CreateRecipeInput) => {
-  if (!data.title) {
-    return [{ field: 'title', message: 'Εισάγετε τίτλο για την συνταγή σας.' }];
-  }
-
-  if (!data.difficulty) {
-    return [{ field: 'difficulty', message: 'Επιλέξτε επίπεδο δυσκολίας.' }];
-  }
-
-  if (!data.prepTime || data.prepTime <= 0) {
+  if (!data.title)
+    return [{ field: 'title', message: 'error.recipe_title_required' }];
+  if (!data.difficulty)
     return [
-      { field: 'prepTime', message: 'Εισάγετε έγκυρο χρόνο προετοιμασίας.' },
+      { field: 'difficulty', message: 'error.recipe_difficulty_required' },
     ];
-  }
-
-  if (!data.cookTime || data.cookTime <= 0) {
+  if (!data.prepTime || data.prepTime <= 0)
+    return [{ field: 'prepTime', message: 'error.recipe_prep_time_invalid' }];
+  if (!data.cookTime || data.cookTime <= 0)
+    return [{ field: 'cookTime', message: 'error.recipe_cook_time_invalid' }];
+  if (!data.ingredients || data.ingredients.length === 0)
     return [
-      { field: 'cookTime', message: 'Εισάγετε έγκυρο χρόνο μαγειρέματος.' },
+      { field: 'ingredients', message: 'error.recipe_ingredients_required' },
     ];
-  }
-
-  if (!data.ingredients || data.ingredients.length === 0) {
-    return [
-      {
-        field: 'ingredients',
-        message: 'Η συνταγή πρέπει να έχει τουλάχιστον ένα υλικό.',
-      },
-    ];
-  }
-
-  if (!data.steps || data.steps.length === 0) {
-    return [
-      {
-        field: 'steps',
-        message: 'Η συνταγή πρέπει να έχει τουλάχιστον ένα βήμα.',
-      },
-    ];
-  }
-
+  if (!data.steps || data.steps.length === 0)
+    return [{ field: 'steps', message: 'error.recipe_steps_required' }];
   return null;
 };
 
 export const validateUpdateRecipe = (data: UpdateRecipeInput) => {
-  if (data.title !== undefined && !data.title) {
-    return [{ field: 'title', message: 'Ο τίτλος δεν μπορεί να είναι κενός.' }];
-  }
-
-  if (data.prepTime !== undefined && data.prepTime <= 0) {
-    return [
-      { field: 'prepTime', message: 'Εισάγετε έγκυρο χρόνο προετοιμασίας.' },
-    ];
-  }
-
-  if (data.cookTime !== undefined && data.cookTime <= 0) {
-    return [
-      { field: 'cookTime', message: 'Εισάγετε έγκυρο χρόνο μαγειρέματος.' },
-    ];
-  }
-
-  if (data.ingredients !== undefined && data.ingredients.length < 3) {
-    return [
-      {
-        field: 'ingredients',
-        message: 'Η συνταγή πρέπει να έχει τουλάχιστον τρία υλικά.',
-      },
-    ];
-  }
-
-  if (data.steps !== undefined && data.steps.length === 0) {
-    return [
-      {
-        field: 'steps',
-        message: 'Η συνταγή πρέπει να έχει τουλάχιστον ένα βήμα.',
-      },
-    ];
-  }
-
+  if (data.title !== undefined && !data.title)
+    return [{ field: 'title', message: 'error.recipe_title_empty' }];
+  if (data.prepTime !== undefined && data.prepTime <= 0)
+    return [{ field: 'prepTime', message: 'error.recipe_prep_time_invalid' }];
+  if (data.cookTime !== undefined && data.cookTime <= 0)
+    return [{ field: 'cookTime', message: 'error.recipe_cook_time_invalid' }];
+  if (data.ingredients !== undefined && data.ingredients.length < 3)
+    return [{ field: 'ingredients', message: 'error.recipe_ingredients_min' }];
+  if (data.steps !== undefined && data.steps.length === 0)
+    return [{ field: 'steps', message: 'error.recipe_steps_required' }];
   return null;
 };

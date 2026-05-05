@@ -31,8 +31,6 @@ import { CookedRecipe } from '../entities/User/CookedRecipe';
 
 @Resolver(Recipe)
 export class RecipeResolver {
-  //  Public Queries
-
   @Query(() => [Recipe])
   async recipes(
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
@@ -62,7 +60,6 @@ export class RecipeResolver {
     });
   }
 
-  // Filter all public recipes by category — used by the UI tabs
   @Query(() => [Recipe])
   async recipesByCategory(
     @Arg('category', () => RecipeCategory) category: RecipeCategory,
@@ -78,7 +75,6 @@ export class RecipeResolver {
     });
   }
 
-  // Public recipes by chef — used on the user-facing chef profile page
   @Query(() => [Recipe])
   async recipesByChef(
     @Arg('chefId', () => Int) chefId: number,
@@ -99,8 +95,6 @@ export class RecipeResolver {
       skip: offset,
     });
   }
-
-  // Chef Queries
 
   @Query(() => [Recipe])
   @UseMiddleware(isAuth, isChef)
@@ -132,7 +126,6 @@ export class RecipeResolver {
     });
   }
 
-  // Chef's own recipes filtered by category
   @Query(() => [Recipe])
   @UseMiddleware(isAuth, isChef)
   async myRecipesByCategory(
@@ -175,8 +168,6 @@ export class RecipeResolver {
 
     return Recipe.count({ where: { authorId: chefProfile.id } });
   }
-
-  // ── Chef Mutations ─────────────────────────────────────────────────
 
   @Mutation(() => RecipeResponse)
   @UseMiddleware(isAuth, isChef)
@@ -232,7 +223,6 @@ export class RecipeResolver {
 
       await manager.save(recipe);
 
-      // 2. Insert RecipeIngredient rows — use insert() for composite PK
       for (const ing of data.ingredients) {
         const ingredient = await manager.findOne(Ingredient, {
           where: { id: ing.ingredientId },
@@ -250,7 +240,6 @@ export class RecipeResolver {
         });
       }
 
-      // 3. Create steps — translate all bodies in parallel
       const stepTranslations = await Promise.all(
         data.steps.map((s) => translateText(s.body)),
       );
@@ -264,7 +253,6 @@ export class RecipeResolver {
         await manager.save(step);
       }
 
-      // 4. Attach utensils
       if (data.utensilIds && data.utensilIds.length > 0) {
         const utensils = await manager.findBy(Utensil, {
           id: In(data.utensilIds),
@@ -273,7 +261,6 @@ export class RecipeResolver {
         await manager.save(recipe);
       }
 
-      // 5. Return with all relations loaded
       const fullRecipe = await manager.findOne(Recipe, {
         where: { id: recipe.id },
         relations: [
