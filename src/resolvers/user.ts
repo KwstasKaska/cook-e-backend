@@ -192,25 +192,13 @@ export class UserResolver {
       }
     } catch (err: any) {
       if (err.code === '23505') {
-        if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
+        if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb')
           return {
-            errors: [
-              {
-                field: 'username',
-                message: 'Το όνομα  χρησιμοποιείται από άλλον χρήστη',
-              },
-            ],
+            errors: [{ field: 'username', message: 'error.username_taken' }],
           };
-        } else if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22') {
-          return {
-            errors: [
-              {
-                field: 'email',
-                message: 'Το email χρησιμοποιείται από άλλον χρήστη',
-              },
-            ],
-          };
-        }
+
+        if (err.constraint === 'UQ_e12875dfb3b1d92d7d7c5377e22')
+          return { errors: [{ field: 'email', message: 'error.email_taken' }] };
       }
     }
 
@@ -223,18 +211,23 @@ export class UserResolver {
     @Arg('password') password: string,
     @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
+    if (!email)
+      return { errors: [{ field: 'email', message: 'error.email_required' }] };
+
+    if (!password)
       return {
-        errors: [{ field: 'email', message: 'error.email_not_found' }],
+        errors: [{ field: 'password', message: 'error.password_required' }],
       };
-    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user)
+      return { errors: [{ field: 'email', message: 'error.email_not_found' }] };
+
     const valid = await argon2.verify(user.password, password);
-    if (!valid) {
+    if (!valid)
       return {
         errors: [{ field: 'password', message: 'error.wrong_password' }],
       };
-    }
 
     req.session.userId = user.id;
     req.session.userRole = user.role;

@@ -23,8 +23,6 @@ import { UserRole } from '../entities/General/Information';
 
 @Resolver(Article)
 export class ArticleResolver {
-  // ─── Public Queries ───────────────────────────────────────────────
-
   @Query(() => [Article])
   async articles(
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
@@ -91,8 +89,6 @@ export class ArticleResolver {
     return Article.findOne({ where: { id }, relations: ['creator'] });
   }
 
-  // ─── Nutritionist Private Queries ─────────────────────────────────
-
   @Query(() => [Article])
   @UseMiddleware(isAuth, isNutr)
   async myArticles(
@@ -108,8 +104,6 @@ export class ArticleResolver {
       skip: offset,
     });
   }
-
-  // ─── Mutations ────────────────────────────────────────────────────
 
   @Mutation(() => ArticleResponse)
   @UseMiddleware(isAuth)
