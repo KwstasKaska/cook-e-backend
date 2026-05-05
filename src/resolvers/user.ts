@@ -280,7 +280,7 @@ export class UserResolver {
   ): Promise<UserResponse> {
     const user = await User.findOne({ where: { id: req.session.userId } });
     if (!user) {
-      return { errors: [{ field: 'user', message: 'Ο χρήστης δεν βρέθηκε.' }] };
+      return { errors: [{ field: 'user', message: 'error.user_not_found' }] };
     }
 
     if (data.newPassword) {
@@ -289,7 +289,7 @@ export class UserResolver {
           errors: [
             {
               field: 'currentPassword',
-              message: 'Παρακαλώ εισάγετε τον τρέχοντα κωδικό σας.',
+              message: 'error.current_password_required',
             },
           ],
         };
@@ -300,7 +300,7 @@ export class UserResolver {
           errors: [
             {
               field: 'currentPassword',
-              message: 'Λανθασμένος τρέχων κωδικός.',
+              message: 'error.current_password_wrong',
             },
           ],
         };
@@ -319,12 +319,7 @@ export class UserResolver {
       if (err.code === '23505') {
         if (err.constraint === 'UQ_78a916df40e02a9deb1c4b75edb') {
           return {
-            errors: [
-              {
-                field: 'username',
-                message: 'Το όνομα χρησιμοποιείται από άλλον χρήστη.',
-              },
-            ],
+            errors: [{ field: 'username', message: 'error.username_taken' }],
           };
         }
       }
