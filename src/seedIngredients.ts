@@ -4,8 +4,6 @@ import { IngredientsCategory } from './entities/Chef/IngredientsCategory';
 import { Utensil } from './entities/Chef/Utensil';
 import * as IngredientsEnums from './utils/ingredients';
 
-// ── Utensils
-
 const UtensilsEL: Record<string, string> = {
   fork: 'Πιρούνι',
   knife: 'Μαχαίρι',
@@ -50,8 +48,6 @@ const ExtraVesselsEN: Record<string, string> = {
   blender: 'Blender',
   cuttingBoard: 'Cutting Board',
 };
-
-// ── Category mapping
 
 const categoryNames = [
   'Vegetables',
