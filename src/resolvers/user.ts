@@ -125,8 +125,10 @@ export class UserResolver {
     @Arg('email') email: string,
     @Ctx() { redis }: MyContext,
   ) {
-    console.log('forgotPassword called with:', email);
+    console.log('looking for email:', email);
     const user = await User.findOne({ where: { email } });
+    console.log('user found:', user?.email ?? 'null');
+    console.log('redis status:', redis?.status);
     if (!user) {
       return true;
     }
@@ -139,10 +141,12 @@ export class UserResolver {
       60 * 60 * 24 * 3,
     );
 
+    console.log('sending email to:', email);
     await sendEmail(
       email,
       `<a href="${process.env.FRONTEND_URL}/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`,
     );
+    console.log('email sent');
     return true;
   }
 
