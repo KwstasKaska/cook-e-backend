@@ -141,12 +141,15 @@ export class UserResolver {
       60 * 60 * 24 * 3,
     );
 
-    console.log('sending email to:', email);
-    await sendEmail(
-      email,
-      `<a href="${process.env.FRONTEND_URL}/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`,
-    );
-    console.log('email sent');
+    try {
+      await sendEmail(
+        email,
+        `<a href="${process.env.FRONTEND_URL}/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`,
+      );
+      console.log('email sent');
+    } catch (err) {
+      console.error('sendEmail error:', err);
+    }
     return true;
   }
 
