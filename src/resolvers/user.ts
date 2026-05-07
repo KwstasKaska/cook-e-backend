@@ -125,6 +125,7 @@ export class UserResolver {
     @Arg('email') email: string,
     @Ctx() { redis }: MyContext,
   ) {
+    console.log('forgotPassword called with:', email);
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return true;

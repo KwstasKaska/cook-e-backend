@@ -1,27 +1,18 @@
-'use strict';
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.ethereal.email',
-  port: 587,
-  secure: false,
+  service: 'gmail',
   auth: {
-    user: 'a6oqhw5zazclae4h@ethereal.email',
-    pass: 'PSfurFcPVYKdk2SRng',
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
   },
 });
 
-// async..await is not allowed in global scope, must use a wrapper
 export const sendEmail = async (to: string, html: string) => {
-  // send mail with defined transport object
-  const info = await transporter.sendMail({
-    from: '"<cookE@gmail.com>', // sender address
-    to: to,
-    subject: 'Αλλαγή κωδικού πρόσβασης', // Subject line
-    html, // html body
+  await transporter.sendMail({
+    from: `"Cook-E" <${process.env.GMAIL_USER}>`,
+    to,
+    subject: 'Αλλαγή κωδικού πρόσβασης',
+    html,
   });
-
-  console.log('Message sent: %s', info.messageId);
-
-  console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
 };
