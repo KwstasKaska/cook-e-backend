@@ -140,6 +140,7 @@ export class UserResolver {
       'EX',
       60 * 60 * 24 * 3,
     );
+    console.log('token saved to redis');
 
     try {
       await sendEmail(
