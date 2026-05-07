@@ -17,8 +17,6 @@ import { UserResponse } from './types/user-object';
 import { validateRegister } from '../utils/validateRegister';
 import { MyContext } from '../types';
 import { COOKIE_NAME } from '../constants';
-import { v4 } from 'uuid';
-import { sendEmail } from '../utils/sendEmail';
 import { AppointmentRequest } from '../entities/Nutritionist/AppointmentRequest';
 import { isAuth } from '../middleware/isAuth';
 import { isUser } from '../middleware/isUser';
@@ -118,40 +116,6 @@ export class UserResolver {
     req.session.userId = user?.id;
 
     return { user } as any;
-  }
-
-  @Mutation(() => Boolean)
-  async forgotPassword(
-    @Arg('email') email: string,
-    @Ctx() { redis }: MyContext,
-  ) {
-    console.log('looking for email:', email);
-    const user = await User.findOne({ where: { email } });
-    console.log('user found:', user?.email ?? 'null');
-    console.log('redis status:', redis?.status);
-    if (!user) {
-      return true;
-    }
-    const token = v4();
-    if (!redis) return false;
-    await redis.set(
-      'forget-password:' + token,
-      user.id,
-      'EX',
-      60 * 60 * 24 * 3,
-    );
-    console.log('token saved to redis');
-
-    try {
-      await sendEmail(
-        email,
-        `<a href="${process.env.FRONTEND_URL}/change-password/${token}">Επαναφορά κωδικού πρόσβασης</a>`,
-      );
-      console.log('email sent');
-    } catch (err) {
-      console.error('sendEmail error:', err);
-    }
-    return true;
   }
 
   @Query(() => User, { nullable: true })
