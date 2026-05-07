@@ -30,7 +30,7 @@ export const validateUpdateRecipe = (data: UpdateRecipeInput) => {
     return [{ field: 'prepTime', message: 'error.recipe_prep_time_invalid' }];
   if (data.cookTime !== undefined && data.cookTime <= 0)
     return [{ field: 'cookTime', message: 'error.recipe_cook_time_invalid' }];
-  if (data.ingredients !== undefined && data.ingredients.length < 3)
+  if (data.ingredients !== undefined && data.ingredients.length < 1)
     return [{ field: 'ingredients', message: 'error.recipe_ingredients_min' }];
   if (data.steps !== undefined && data.steps.length === 0)
     return [{ field: 'steps', message: 'error.recipe_steps_required' }];
