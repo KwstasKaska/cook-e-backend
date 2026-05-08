@@ -17,7 +17,6 @@ import { translateText } from '../utils/translate';
 
 @Resolver(NutritionistProfile)
 export class NutritionistProfileResolver {
-  // All nutritionists — public
   @Query(() => [NutritionistProfile])
   async nutritionists(
     @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
@@ -30,18 +29,16 @@ export class NutritionistProfileResolver {
     });
   }
 
-  // Single nutritionist by id — public
   @Query(() => NutritionistProfile, { nullable: true })
   async nutritionist(
     @Arg('id', () => Int) id: number,
   ): Promise<NutritionistProfile | null> {
     return NutritionistProfile.findOne({
-      where: { id },
+      where: { user: { id } },
       relations: ['user', 'slots'],
     });
   }
 
-  // The logged-in nutritionist's own profile
   @Query(() => NutritionistProfile, { nullable: true })
   @UseMiddleware(isAuth, isNutr)
   async myNutritionistProfile(
