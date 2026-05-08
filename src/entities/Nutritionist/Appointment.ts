@@ -34,6 +34,7 @@ export class Appointment extends BaseEntity {
   @Column()
   nutritionistId: number;
 
+  @Field(() => NutritionistProfile, { nullable: true })
   @ManyToOne(() => NutritionistProfile, (nutritionist) => nutritionist.slots)
   @JoinColumn({ name: 'nutritionistId' })
   nutritionistProfile: NutritionistProfile;

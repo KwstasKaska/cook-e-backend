@@ -218,10 +218,12 @@ export class AppointmentRequestResolver {
   async myAppointmentRequests(
     @Ctx() { req }: MyContext,
   ): Promise<AppointmentRequest[]> {
-    return AppointmentRequest.find({
-      where: { clientId: req.session.userId },
-      relations: ['slot'],
-      order: { requestedAt: 'DESC' },
-    });
+    return AppointmentRequest.createQueryBuilder('request')
+      .leftJoinAndSelect('request.slot', 'slot')
+      .leftJoinAndSelect('slot.nutritionistProfile', 'nutritionistProfile')
+      .leftJoinAndSelect('nutritionistProfile.user', 'nutrUser')
+      .where('request.clientId = :clientId', { clientId: req.session.userId })
+      .orderBy('request.requestedAt', 'DESC')
+      .getMany();
   }
 }
