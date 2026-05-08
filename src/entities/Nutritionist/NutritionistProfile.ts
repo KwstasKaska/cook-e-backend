@@ -9,13 +9,13 @@ import {
 } from 'typeorm';
 import { User } from '../User/User';
 import { Appointment } from './Appointment';
-import { Field, ObjectType } from 'type-graphql';
+import { Field, Int, ObjectType } from 'type-graphql';
 import { MealScheduler } from './MealScheduler';
 
 @ObjectType()
 @Entity()
 export class NutritionistProfile extends BaseEntity {
-  @Field()
+  @Field(() => Int)
   @PrimaryGeneratedColumn()
   id: number;
 
