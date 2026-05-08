@@ -21,7 +21,7 @@ export class NutritionistProfile extends BaseEntity {
 
   @Field(() => User, { nullable: true })
   @OneToOne(() => User)
-  @JoinColumn()
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @Field(() => String, { nullable: true })
