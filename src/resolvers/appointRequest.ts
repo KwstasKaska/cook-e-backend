@@ -18,8 +18,6 @@ import { AppointmentStatus } from '../entities/Nutritionist/AppointmentRequest';
 import { isUser } from '../middleware/isUser';
 import { isNutr } from '../middleware/isNutr';
 
-// ── Helper ────────────────────────────────────────────────────────────────────
-// appointment.nutritionistId stores NutritionistProfile.id, NOT User.id.
 async function resolveProfileId(
   userId: number | undefined,
 ): Promise<number | null> {
@@ -32,8 +30,6 @@ async function resolveProfileId(
 
 @Resolver()
 export class AppointmentRequestResolver {
-  // ── User mutations ────────────────────────────────────────────────────────
-
   @Mutation(() => AppointmentRequestResponse)
   @UseMiddleware(isAuth, isUser)
   async requestAppointment(
@@ -147,7 +143,6 @@ export class AppointmentRequestResolver {
     });
 
     if (!appointmentRequest) return false;
-
     if (appointmentRequest.status !== AppointmentStatus.PENDING) return false;
 
     try {
@@ -158,8 +153,6 @@ export class AppointmentRequestResolver {
     }
   }
 
-  // ── Nutritionist mutations ─────────────────────────────────────────────────
-
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth, isNutr)
   async respondToAppointmentRequest(
@@ -167,7 +160,6 @@ export class AppointmentRequestResolver {
     @Arg('status', () => AppointmentStatus) status: AppointmentStatus,
     @Ctx() { req }: MyContext,
   ): Promise<boolean> {
-    // Resolve profile id so we can verify slot ownership correctly
     const profileId = await resolveProfileId(req.session.userId);
     if (!profileId) return false;
 
@@ -177,10 +169,7 @@ export class AppointmentRequestResolver {
       .getOne();
 
     if (!request) return false;
-
-    // Guard: slot must belong to this nutritionist's profile
     if (request.slot.nutritionistId !== profileId) return false;
-
     if (request.status !== AppointmentStatus.PENDING) return false;
 
     request.status = status;
@@ -188,13 +177,21 @@ export class AppointmentRequestResolver {
     if (status === AppointmentStatus.ACCEPTED) {
       request.slot.isAvailable = false;
       await request.slot.save();
+
+      await AppointmentRequest.createQueryBuilder()
+        .update(AppointmentRequest)
+        .set({ status: AppointmentStatus.REJECTED })
+        .where('slotId = :slotId AND id != :id AND status = :pending', {
+          slotId: request.slotId,
+          id: requestId,
+          pending: AppointmentStatus.PENDING,
+        })
+        .execute();
     }
 
     await request.save();
     return true;
   }
-
-  // ── Nutritionist queries ───────────────────────────────────────────────────
 
   @Query(() => [AppointmentRequest])
   @UseMiddleware(isAuth, isNutr)
@@ -203,7 +200,6 @@ export class AppointmentRequestResolver {
     @Arg('limit', () => Int, { defaultValue: 20 }) limit: number,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
   ): Promise<AppointmentRequest[]> {
-    // Must resolve profile id — slot.nutritionistId is NutritionistProfile.id
     const profileId = await resolveProfileId(req.session.userId);
     if (!profileId) return [];
 
@@ -216,8 +212,6 @@ export class AppointmentRequestResolver {
       .skip(offset)
       .getMany();
   }
-
-  // ── User queries ───────────────────────────────────────────────────────────
 
   @Query(() => [AppointmentRequest])
   @UseMiddleware(isAuth, isUser)
