@@ -9,7 +9,7 @@ export enum Vegetables {
   Garlic = 'Σκόρδο',
   Pepper = 'Πιπεριά',
   FlorinaPepper = 'Πιπεριά φλωρίνης',
-  Tomato = 'Τομάτα',
+  Tomato = 'Ντομάτα',
   CherryTomato = 'Ντοματίνια',
   Cucumber = 'Αγγούρι',
   Eggplant = 'Μελιτζάνα',
@@ -131,8 +131,7 @@ export enum Grain {
   Orzo = 'Κριθαράκι',
   Hilopites = 'Χυλοπίτες',
   Lasagna = 'Λαζάνια',
-  PitaBread = 'Ψωμί Πίτα',
-  Bread = 'Ψωμί',
+  PitaBread = 'Πίτα',
   Rusks = 'Παξιμάδια',
   PhylloSheet = 'Φύλλο κρούστας',
   Cornmeal = 'Αλεύρι καλαμποκιού',
@@ -157,7 +156,6 @@ export enum GrainEN {
   PitaBread = 'Pita bread',
   Bread = 'Bread',
   Rusks = 'Rusks',
-  PhylloSheet = 'Phyllo sheet',
   Cornmeal = 'Cornmeal',
 }
 
@@ -261,7 +259,6 @@ export enum MeatEN {
 
 export enum Lipid {
   OliveOil = 'Ελαιόλαδο',
-  ExtraVirginOliveOil = 'Εξαιρετικό παρθένο ελαιόλαδο',
   SunflowerOil = 'Ηλιέλαιο',
   CornOil = 'Αραβοσιτέλαιο',
   Tahini = 'Ταχίνι',
@@ -271,11 +268,9 @@ export enum Lipid {
   Mayonnaise = 'Μαγιονέζα',
   Almonds = 'Αμύγδαλα',
   Walnuts = 'Καρύδια',
-  Sesame = 'Σουσάμι',
 }
 export enum LipidEN {
   OliveOil = 'Olive oil',
-  ExtraVirginOliveOil = 'Extra virgin olive oil',
   SunflowerOil = 'Sunflower oil',
   CornOil = 'Corn oil',
   Tahini = 'Tahini',
@@ -285,7 +280,6 @@ export enum LipidEN {
   Mayonnaise = 'Mayonnaise',
   Almonds = 'Almonds',
   Walnuts = 'Walnuts',
-  Sesame = 'Sesame',
 }
 
 export enum Legumes {
@@ -296,8 +290,6 @@ export enum Legumes {
   BlackEyedPeas = 'Μαυρομάτικα',
   WhiteBeans = 'Φασόλια λευκά',
   GigantesBeans = 'Φασόλια γίγαντες',
-  RedKidneyBeans = 'Φασόλια κόκκινα',
-  BlackBeans = 'Φασόλια μαύρα',
   GreenPeas = 'Αρακάς',
   Soybeans = 'Σόγια',
 }
@@ -309,8 +301,6 @@ export enum LegumesEN {
   BlackEyedPeas = 'Black-Eyed peas',
   WhiteBeans = 'White beans',
   GigantesBeans = 'Gigantes beans',
-  RedKidneyBeans = 'Red kidney beans',
-  BlackBeans = 'Black beans',
   GreenPeas = 'Green peas',
   Soybeans = 'Soybeans',
 }
@@ -320,7 +310,6 @@ export enum Pastry {
   BrownSugar = 'Καστανή ζάχαρη',
   PowderSugar = 'Ζάχαρη άχνη',
   Honey = 'Μέλι',
-  ThymeHoney = 'Μέλι θυμαρίσιο',
   MapleSyrup = 'Σιρόπι σφενδάμου',
   Vanilla = 'Βανίλια',
   Cocoa = 'Κακάο',
@@ -339,7 +328,6 @@ export enum PastryEN {
   BrownSugar = 'Brown sugar',
   PowderSugar = 'Powdered sugar',
   Honey = 'Honey',
-  ThymeHoney = 'Thyme honey',
   MapleSyrup = 'Maple syrup',
   Vanilla = 'Vanilla',
   Cocoa = 'Cocoa',
@@ -375,7 +363,6 @@ export enum Spices {
   Anise = 'Γλυκάνισος',
   Cloves = 'Γαρύφαλλο',
   Nutmeg = 'Μοσχοκάρυδο',
-  Chives = 'Σχοινόπρασο',
 }
 export enum SpicesEN {
   Salt = 'Salt',
@@ -398,5 +385,4 @@ export enum SpicesEN {
   Anise = 'Anise',
   Cloves = 'Cloves',
   Nutmeg = 'Nutmeg',
-  Chives = 'Chives',
 }
