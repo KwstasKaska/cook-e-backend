@@ -1,11 +1,3 @@
-/**
- * Translates a string using the MyMemory API.
- * 100% free, no API key required, 1000 requests/day limit.
- * Default direction is Greek → English, matching the app's input convention
- * (chefs/nutritionists write in Greek; the backend auto-fills the _en column).
- *
- * Docs: https://mymemory.translated.net/doc/spec.php
- */
 export const translateText = async (
   text: string,
   source: 'el' | 'en' = 'el',
@@ -39,5 +31,22 @@ export const translateText = async (
   } catch (err) {
     console.error('[translateText] Failed, using original text:', err);
     return text; // fallback: return original so save never fails
+  }
+};
+
+const isGreek = (text: string): boolean =>
+  /[\u0370-\u03FF\u1F00-\u1FFF]/.test(text);
+
+export const translateBilingual = async (
+  text: string,
+): Promise<{ el: string; en: string }> => {
+  if (!text || text.trim() === '') return { el: '', en: '' };
+
+  if (isGreek(text)) {
+    const en = await translateText(text, 'el', 'en');
+    return { el: text, en };
+  } else {
+    const el = await translateText(text, 'en', 'el');
+    return { el, en: text };
   }
 };

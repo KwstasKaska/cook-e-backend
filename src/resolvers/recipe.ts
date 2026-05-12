@@ -24,7 +24,7 @@ import {
   validateUpdateRecipe,
 } from '../utils/validateRecipe';
 import { In } from 'typeorm';
-import { translateText } from '../utils/translate';
+import { translateBilingual } from '../utils/translate';
 import { RecipeRating } from '../entities/General/RecipeRating';
 import { UserFavorite } from '../entities/User/UserFavorite';
 import { CookedRecipe } from '../entities/User/CookedRecipe';
@@ -188,25 +188,25 @@ export class RecipeResolver {
       };
     }
 
-    const [title_en, description_en, chefComment_en] = await Promise.all([
-      translateText(data.title),
+    const [titleBi, descBi, commentBi] = await Promise.all([
+      translateBilingual(data.title),
       data.description
-        ? translateText(data.description)
+        ? translateBilingual(data.description)
         : Promise.resolve(undefined),
       data.chefComment
-        ? translateText(data.chefComment)
+        ? translateBilingual(data.chefComment)
         : Promise.resolve(undefined),
     ]);
 
     return await AppDataSource.transaction(async (manager) => {
       // 1. Create recipe
       const recipe = manager.create(Recipe, {
-        title_el: data.title,
-        title_en,
-        description_el: data.description,
-        description_en,
-        chefComment_el: data.chefComment,
-        chefComment_en,
+        title_el: titleBi.el,
+        title_en: titleBi.en,
+        description_el: descBi?.el ?? data.description,
+        description_en: descBi?.en,
+        chefComment_el: commentBi?.el ?? data.chefComment,
+        chefComment_en: commentBi?.en,
         recipeImage: data.recipeImage,
         difficulty: data.difficulty,
         prepTime: data.prepTime,
@@ -240,14 +240,14 @@ export class RecipeResolver {
         });
       }
 
-      const stepTranslations = await Promise.all(
-        data.steps.map((s) => translateText(s.body)),
+      const stepBis = await Promise.all(
+        data.steps.map((s) => translateBilingual(s.body)),
       );
 
       for (let i = 0; i < data.steps.length; i++) {
         const step = manager.create(Step, {
-          body_el: data.steps[i].body,
-          body_en: stepTranslations[i],
+          body_el: stepBis[i].el,
+          body_en: stepBis[i].en,
           recipeID: recipe.id,
         });
         await manager.save(step);
@@ -324,28 +324,28 @@ export class RecipeResolver {
       };
     }
 
-    const [title_en, description_en, chefComment_en] = await Promise.all([
-      data.title ? translateText(data.title) : Promise.resolve(undefined),
+    const [titleBi, descBi, commentBi] = await Promise.all([
+      data.title ? translateBilingual(data.title) : Promise.resolve(undefined),
       data.description
-        ? translateText(data.description)
+        ? translateBilingual(data.description)
         : Promise.resolve(undefined),
       data.chefComment
-        ? translateText(data.chefComment)
+        ? translateBilingual(data.chefComment)
         : Promise.resolve(undefined),
     ]);
 
     return await AppDataSource.transaction(async (manager) => {
       if (data.title !== undefined) {
-        recipe.title_el = data.title;
-        recipe.title_en = title_en!;
+        recipe.title_el = titleBi!.el;
+        recipe.title_en = titleBi!.en;
       }
       if (data.description !== undefined) {
-        recipe.description_el = data.description;
-        recipe.description_en = description_en;
+        recipe.description_el = descBi!.el;
+        recipe.description_en = descBi!.en;
       }
       if (data.chefComment !== undefined) {
-        recipe.chefComment_el = data.chefComment;
-        recipe.chefComment_en = chefComment_en;
+        recipe.chefComment_el = commentBi!.el;
+        recipe.chefComment_en = commentBi!.en;
       }
       if (data.recipeImage !== undefined) recipe.recipeImage = data.recipeImage;
       if (data.difficulty !== undefined) recipe.difficulty = data.difficulty;
@@ -390,14 +390,14 @@ export class RecipeResolver {
         ]);
         await manager.delete(Step, { recipeID: recipe.id });
 
-        const stepTranslations = await Promise.all(
-          data.steps.map((s) => translateText(s.body)),
+        const stepBis = await Promise.all(
+          data.steps.map((s) => translateBilingual(s.body)),
         );
 
         for (let i = 0; i < data.steps.length; i++) {
           const step = manager.create(Step, {
-            body_el: data.steps[i].body,
-            body_en: stepTranslations[i],
+            body_el: stepBis[i].el,
+            body_en: stepBis[i].en,
             recipeID: recipe.id,
           });
           await manager.save(step);

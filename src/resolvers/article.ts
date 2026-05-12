@@ -18,7 +18,7 @@ import {
   validateArticle,
   validateUpdateArticle,
 } from '../utils/validateArticle';
-import { translateText } from '../utils/translate';
+import { translateBilingual } from '../utils/translate';
 import { UserRole } from '../entities/General/Information';
 
 @Resolver(Article)
@@ -114,16 +114,16 @@ export class ArticleResolver {
     const errors = validateArticle(data);
     if (errors) return { errors };
 
-    const [title_en, text_en] = await Promise.all([
-      translateText(data.title),
-      translateText(data.text),
+    const [titleBi, textBi] = await Promise.all([
+      translateBilingual(data.title),
+      translateBilingual(data.text),
     ]);
 
     const article = await Article.create({
-      title_el: data.title,
-      title_en,
-      text_el: data.text,
-      text_en,
+      title_el: titleBi.el,
+      title_en: titleBi.en,
+      text_el: textBi.el,
+      text_en: textBi.en,
       creatorId: req.session.userId,
       image: data.image,
     }).save();
@@ -140,20 +140,20 @@ export class ArticleResolver {
     const errors = validateUpdateArticle(data);
     if (errors) return { errors };
 
-    const [title_en, text_en] = await Promise.all([
-      data.title ? translateText(data.title) : Promise.resolve(undefined),
-      data.text ? translateText(data.text) : Promise.resolve(undefined),
+    const [titleBi, textBi] = await Promise.all([
+      data.title ? translateBilingual(data.title) : Promise.resolve(undefined),
+      data.text ? translateBilingual(data.text) : Promise.resolve(undefined),
     ]);
 
     const updatedFields: any = {};
 
     if (data.title !== undefined) {
-      updatedFields.title_el = data.title;
-      updatedFields.title_en = title_en;
+      updatedFields.title_el = titleBi!.el;
+      updatedFields.title_en = titleBi!.en;
     }
     if (data.text !== undefined) {
-      updatedFields.text_el = data.text;
-      updatedFields.text_en = text_en;
+      updatedFields.text_el = textBi!.el;
+      updatedFields.text_en = textBi!.en;
     }
     if (data.image !== undefined) {
       updatedFields.image = data.image;

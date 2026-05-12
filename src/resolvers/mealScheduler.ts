@@ -23,7 +23,7 @@ import {
 import { MyContext } from '../types';
 import { MealPlanResponse } from './types/mealScheduler-object';
 import { UpdateMealSchedulerInput } from './types/mealScheduler-input';
-import { translateText } from '../utils/translate';
+import { translateBilingual } from '../utils/translate';
 import { isUser } from '../middleware/isUser';
 
 @Resolver()
@@ -123,12 +123,12 @@ export class NutritionPlanResolver {
         where: { user: { id: userId }, day, mealType },
       });
 
-      const comment_en = await translateText(comment);
+      const commentBi = await translateBilingual(comment);
 
       if (existing) {
         // Override: update in place
-        existing.comment_el = comment;
-        existing.comment_en = comment_en;
+        existing.comment_el = commentBi.el;
+        existing.comment_en = commentBi.en;
         existing.nutritionist = nutritionist;
         await existing.save();
         return { mealScheduler: existing };
@@ -139,8 +139,8 @@ export class NutritionPlanResolver {
         nutritionist,
         day,
         mealType,
-        comment_el: comment,
-        comment_en,
+        comment_el: commentBi.el,
+        comment_en: commentBi.en,
       });
 
       await mealScheduler.save();
@@ -185,8 +185,9 @@ export class NutritionPlanResolver {
     if (data.mealType) meal.mealType = data.mealType;
 
     if (data.comment !== undefined) {
-      meal.comment_el = data.comment;
-      meal.comment_en = await translateText(data.comment);
+      const commentBi = await translateBilingual(data.comment);
+      meal.comment_el = commentBi.el;
+      meal.comment_en = commentBi.en;
     }
 
     await meal.save();
