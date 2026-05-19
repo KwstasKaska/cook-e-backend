@@ -11,26 +11,30 @@ export const translateText = async (
       langpair: `${source}|${target}`,
     });
 
+    if (process.env.MYMEMORY_EMAIL) {
+      params.append('de', process.env.MYMEMORY_EMAIL);
+    }
+
     const res = await fetch(
       `https://api.mymemory.translated.net/get?${params.toString()}`,
     );
 
     if (!res.ok) {
       console.error(`[translateText] HTTP ${res.status}: ${await res.text()}`);
-      return text; // fallback: return original so save never fails
+      return text;
     }
 
     const data = await res.json();
 
     if (data.responseStatus !== 200) {
       console.error(`[translateText] API error: ${data.responseDetails}`);
-      return text; // fallback
+      return text;
     }
 
     return (data.responseData.translatedText as string) ?? text;
   } catch (err) {
     console.error('[translateText] Failed, using original text:', err);
-    return text; // fallback: return original so save never fails
+    return text;
   }
 };
 
