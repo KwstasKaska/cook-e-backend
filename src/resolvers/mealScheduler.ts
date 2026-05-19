@@ -26,6 +26,12 @@ import { UpdateMealSchedulerInput } from './types/mealScheduler-input';
 import { translateBilingual } from '../utils/translate';
 import { isUser } from '../middleware/isUser';
 
+const loadMeal = (id: number) =>
+  MealScheduler.findOne({
+    where: { id },
+    relations: ['user', 'nutritionist', 'nutritionist.user'],
+  });
+
 @Resolver()
 export class NutritionPlanResolver {
   @Query(() => [MealScheduler])
@@ -118,7 +124,6 @@ export class NutritionPlanResolver {
         };
       }
 
-      // Check for existing entry — upsert instead of blocking
       const existing = await MealScheduler.findOne({
         where: { user: { id: userId }, day, mealType },
       });
@@ -126,12 +131,11 @@ export class NutritionPlanResolver {
       const commentBi = await translateBilingual(comment);
 
       if (existing) {
-        // Override: update in place
         existing.comment_el = commentBi.el;
         existing.comment_en = commentBi.en;
         existing.nutritionist = nutritionist;
         await existing.save();
-        return { mealScheduler: existing };
+        return { mealScheduler: (await loadMeal(existing.id)) ?? existing };
       }
 
       const mealScheduler = MealScheduler.create({
@@ -145,7 +149,9 @@ export class NutritionPlanResolver {
 
       await mealScheduler.save();
 
-      return { mealScheduler };
+      return {
+        mealScheduler: (await loadMeal(mealScheduler.id)) ?? mealScheduler,
+      };
     } catch (err) {
       console.error('[createMealScheduler] Error:', err);
       return {
@@ -192,7 +198,7 @@ export class NutritionPlanResolver {
 
     await meal.save();
 
-    return { mealScheduler: meal };
+    return { mealScheduler: (await loadMeal(meal.id)) ?? meal };
   }
 
   @Mutation(() => MealPlanResponse)
