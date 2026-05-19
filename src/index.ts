@@ -69,7 +69,7 @@ const main = async () => {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 4, //μέγιστη διάρκεια ζωής του cookie
         httpOnly: true, //το χρησιμοποιώ για να εμποδίζει απο επιθέσεις στο cookie(να φαίνεται μόνο στον server)
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', //πρέπει να γίνει διαχωρισμός καθώς όταν το τρέχω, το back με το front end είναι διαφορετικά domains
+        sameSite: 'lax', //πρέπει να γίνει διαχωρισμός καθώς όταν το τρέχω, το back με το front end είναι διαφορετικά domains
         secure: process.env.NODE_ENV === 'production', //προτεικένου να δέχεται το https
       },
       saveUninitialized: false, //για να μην αποηθεύεται τίποτα όταν κάποιος δεν κάνει login
