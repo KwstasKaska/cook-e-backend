@@ -10,6 +10,7 @@ import { Message } from '../Messsaging/Message';
 import { UserFavorite } from './UserFavorite';
 import { ChefRating } from '../General/ChefRating';
 import { RecipeRating } from '../General/RecipeRating';
+import { NutritionistRating } from '../General/NutritionistRating';
 import { CookedRecipe } from './CookedRecipe';
 
 @ObjectType()
@@ -42,6 +43,9 @@ export class User extends Information {
 
   @OneToMany(() => RecipeRating, (rating) => rating.user)
   recipeRatings: RecipeRating[];
+
+  @OneToMany(() => NutritionistRating, (rating) => rating.user)
+  nutritionistRatings: NutritionistRating[];
 
   @OneToMany(() => CookedRecipe, (log) => log.user)
   cookedRecipes: CookedRecipe[];

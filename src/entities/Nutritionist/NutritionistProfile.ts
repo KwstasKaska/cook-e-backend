@@ -11,6 +11,7 @@ import { User } from '../User/User';
 import { Appointment } from './Appointment';
 import { Field, Int, ObjectType } from 'type-graphql';
 import { MealScheduler } from './MealScheduler';
+import { NutritionistRating } from '../General/NutritionistRating';
 
 // test push
 @ObjectType()
@@ -50,4 +51,7 @@ export class NutritionistProfile extends BaseEntity {
 
   @OneToMany(() => MealScheduler, (plan) => plan.nutritionist)
   nutritionPlans: MealScheduler[];
+
+  @OneToMany(() => NutritionistRating, (rating) => rating.nutritionist)
+  ratings: NutritionistRating[];
 }

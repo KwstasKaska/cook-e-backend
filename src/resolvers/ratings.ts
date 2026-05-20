@@ -12,10 +12,12 @@ import { ChefRating } from '../entities/General/ChefRating';
 import { RecipeRating } from '../entities/General/RecipeRating';
 import { ChefProfile } from '../entities/Chef/ChefProfile';
 import { Recipe } from '../entities/Chef/Recipe';
+import { NutritionistProfile } from '../entities/Nutritionist/NutritionistProfile';
 import { isAuth } from '../middleware/isAuth';
 import { isUser } from '../middleware/isUser';
 import { MyContext } from '../types';
 import AppDataSource from '../app-data-source';
+import { NutritionistRating } from '../entities/General/NutritionistRating';
 
 @Resolver()
 export class RatingResolver {
@@ -210,5 +212,90 @@ export class RatingResolver {
     return RecipeRating.findOne({
       where: { userId: req.session.userId, recipeId },
     });
+  }
+
+  @Query(() => [NutritionistRating])
+  async nutritionistRatings(
+    @Arg('nutritionistId', () => Int) nutritionistId: number,
+    @Arg('limit', () => Int, { defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { defaultValue: 0 }) offset: number,
+  ): Promise<NutritionistRating[]> {
+    return NutritionistRating.find({
+      where: { nutritionistId },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 50),
+      skip: offset,
+    });
+  }
+
+  @Query(() => Float, { nullable: true })
+  async nutritionistAverageRating(
+    @Arg('nutritionistId', () => Int) nutritionistId: number,
+  ): Promise<number | null> {
+    const result = await AppDataSource.query(
+      `SELECT AVG(score)::float AS avg FROM nutritionist_rating WHERE "nutritionistId" = $1`,
+      [nutritionistId],
+    );
+    return result[0]?.avg ?? null;
+  }
+
+  @Query(() => NutritionistRating, { nullable: true })
+  @UseMiddleware(isAuth)
+  async myNutritionistRating(
+    @Arg('nutritionistId', () => Int) nutritionistId: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<NutritionistRating | null> {
+    return NutritionistRating.findOne({
+      where: { userId: req.session.userId, nutritionistId },
+    });
+  }
+
+  @Mutation(() => NutritionistRating)
+  @UseMiddleware(isAuth, isUser)
+  async rateNutritionist(
+    @Arg('nutritionistId', () => Int) nutritionistId: number,
+    @Arg('score', () => Int) score: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<NutritionistRating> {
+    if (score < 1 || score > 5) {
+      throw new Error('Η βαθμολογία πρέπει να είναι μεταξύ 1 και 5.');
+    }
+
+    const nutr = await NutritionistProfile.findOne({
+      where: { id: nutritionistId },
+    });
+    if (!nutr) throw new Error('Ο διατροφολόγος δεν βρέθηκε.');
+
+    const existing = await NutritionistRating.findOne({
+      where: { userId: req.session.userId, nutritionistId },
+    });
+
+    if (existing) {
+      existing.score = score;
+      return existing.save();
+    }
+
+    return NutritionistRating.create({
+      userId: req.session.userId,
+      nutritionistId,
+      score,
+    }).save();
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth, isUser)
+  async deleteNutritionistRating(
+    @Arg('nutritionistId', () => Int) nutritionistId: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    const rating = await NutritionistRating.findOne({
+      where: { userId: req.session.userId, nutritionistId },
+    });
+
+    if (!rating) return false;
+
+    await NutritionistRating.remove(rating);
+    return true;
   }
 }
