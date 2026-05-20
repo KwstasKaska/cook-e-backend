@@ -47,6 +47,69 @@ export class RatingResolver {
     return result[0]?.avg ?? null;
   }
 
+  @Query(() => ChefRating, { nullable: true })
+  @UseMiddleware(isAuth)
+  async myChefRating(
+    @Arg('chefId', () => Int) chefId: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<ChefRating | null> {
+    return ChefRating.findOne({
+      where: { userId: req.session.userId, chefId },
+      relations: ['user'],
+    });
+  }
+
+  @Mutation(() => ChefRating)
+  @UseMiddleware(isAuth, isUser)
+  async rateChef(
+    @Arg('chefId', () => Int) chefId: number,
+    @Arg('score', () => Int) score: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<ChefRating> {
+    if (score < 1 || score > 5) {
+      throw new Error('Η βαθμολογία πρέπει να είναι μεταξύ 1 και 5.');
+    }
+
+    const chef = await ChefProfile.findOne({ where: { id: chefId } });
+    if (!chef) throw new Error('Ο μάγειρας δεν βρέθηκε.');
+
+    const existing = await ChefRating.findOne({
+      where: { userId: req.session.userId, chefId },
+    });
+
+    if (existing) {
+      existing.score = score;
+      await existing.save();
+    } else {
+      await ChefRating.create({
+        userId: req.session.userId,
+        chefId,
+        score,
+      }).save();
+    }
+
+    return ChefRating.findOne({
+      where: { userId: req.session.userId, chefId },
+      relations: ['user'],
+    }) as Promise<ChefRating>;
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth, isUser)
+  async deleteChefRating(
+    @Arg('chefId', () => Int) chefId: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    const rating = await ChefRating.findOne({
+      where: { userId: req.session.userId, chefId },
+    });
+
+    if (!rating) return false;
+
+    await ChefRating.remove(rating);
+    return true;
+  }
+
   @Query(() => [Recipe])
   async topRatedRecipes(
     @Arg('limit', () => Int, { defaultValue: 3 }) limit: number,
@@ -72,63 +135,6 @@ export class RatingResolver {
       ),
     );
     return recipes.filter(Boolean) as Recipe[];
-  }
-
-  @Mutation(() => ChefRating)
-  @UseMiddleware(isAuth, isUser)
-  async rateChef(
-    @Arg('chefId', () => Int) chefId: number,
-    @Arg('score', () => Int) score: number,
-    @Ctx() { req }: MyContext,
-  ): Promise<ChefRating> {
-    if (score < 1 || score > 5) {
-      throw new Error('Η βαθμολογία πρέπει να είναι μεταξύ 1 και 5.');
-    }
-
-    const chef = await ChefProfile.findOne({ where: { id: chefId } });
-    if (!chef) throw new Error('Ο μάγειρας δεν βρέθηκε.');
-
-    const existing = await ChefRating.findOne({
-      where: { userId: req.session.userId, chefId },
-    });
-
-    if (existing) {
-      existing.score = score;
-      return existing.save();
-    }
-
-    return ChefRating.create({
-      userId: req.session.userId,
-      chefId,
-      score,
-    }).save();
-  }
-
-  @Mutation(() => Boolean)
-  @UseMiddleware(isAuth, isUser)
-  async deleteChefRating(
-    @Arg('chefId', () => Int) chefId: number,
-    @Ctx() { req }: MyContext,
-  ): Promise<boolean> {
-    const rating = await ChefRating.findOne({
-      where: { userId: req.session.userId, chefId },
-    });
-
-    if (!rating) return false;
-
-    await ChefRating.remove(rating);
-    return true;
-  }
-
-  @Query(() => ChefRating, { nullable: true })
-  @UseMiddleware(isAuth)
-  async myChefRating(
-    @Arg('chefId', () => Int) chefId: number,
-    @Ctx() { req }: MyContext,
-  ): Promise<ChefRating | null> {
-    return ChefRating.findOne({
-      where: { userId: req.session.userId, chefId },
-    });
   }
 
   @Query(() => [RecipeRating])
@@ -157,6 +163,18 @@ export class RatingResolver {
     return result[0]?.avg ?? null;
   }
 
+  @Query(() => RecipeRating, { nullable: true })
+  @UseMiddleware(isAuth)
+  async myRecipeRating(
+    @Arg('recipeId', () => Int) recipeId: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<RecipeRating | null> {
+    return RecipeRating.findOne({
+      where: { userId: req.session.userId, recipeId },
+      relations: ['user'],
+    });
+  }
+
   @Mutation(() => RecipeRating)
   @UseMiddleware(isAuth, isUser)
   async rateRecipe(
@@ -177,14 +195,19 @@ export class RatingResolver {
 
     if (existing) {
       existing.score = score;
-      return existing.save();
+      await existing.save();
+    } else {
+      await RecipeRating.create({
+        userId: req.session.userId,
+        recipeId,
+        score,
+      }).save();
     }
 
-    return RecipeRating.create({
-      userId: req.session.userId,
-      recipeId,
-      score,
-    }).save();
+    return RecipeRating.findOne({
+      where: { userId: req.session.userId, recipeId },
+      relations: ['user'],
+    }) as Promise<RecipeRating>;
   }
 
   @Mutation(() => Boolean)
@@ -201,17 +224,6 @@ export class RatingResolver {
 
     await RecipeRating.remove(rating);
     return true;
-  }
-
-  @Query(() => RecipeRating, { nullable: true })
-  @UseMiddleware(isAuth)
-  async myRecipeRating(
-    @Arg('recipeId', () => Int) recipeId: number,
-    @Ctx() { req }: MyContext,
-  ): Promise<RecipeRating | null> {
-    return RecipeRating.findOne({
-      where: { userId: req.session.userId, recipeId },
-    });
   }
 
   @Query(() => [NutritionistRating])
@@ -248,6 +260,7 @@ export class RatingResolver {
   ): Promise<NutritionistRating | null> {
     return NutritionistRating.findOne({
       where: { userId: req.session.userId, nutritionistId },
+      relations: ['user'],
     });
   }
 
@@ -273,14 +286,19 @@ export class RatingResolver {
 
     if (existing) {
       existing.score = score;
-      return existing.save();
+      await existing.save();
+    } else {
+      await NutritionistRating.create({
+        userId: req.session.userId,
+        nutritionistId,
+        score,
+      }).save();
     }
 
-    return NutritionistRating.create({
-      userId: req.session.userId,
-      nutritionistId,
-      score,
-    }).save();
+    return NutritionistRating.findOne({
+      where: { userId: req.session.userId, nutritionistId },
+      relations: ['user'],
+    }) as Promise<NutritionistRating>;
   }
 
   @Mutation(() => Boolean)
