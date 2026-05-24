@@ -114,10 +114,9 @@ export class RatingResolver {
   async topRatedRecipes(
     @Arg('limit', () => Int, { defaultValue: 3 }) limit: number,
   ): Promise<Recipe[]> {
-    const rows: { recipeId: number }[] = await AppDataSource.query(
+    const rows = await AppDataSource.query<{ recipeId: number }[]>(
       `SELECT rr."recipeId"
      FROM recipe_rating rr
-     WHERE rr."createdAt" >= NOW() - INTERVAL '7 days'
      GROUP BY rr."recipeId"
      ORDER BY AVG(rr.score) DESC
      LIMIT $1`,
