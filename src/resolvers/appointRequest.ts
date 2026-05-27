@@ -18,15 +18,15 @@ import { AppointmentStatus } from '../entities/Nutritionist/AppointmentRequest';
 import { isUser } from '../middleware/isUser';
 import { isNutr } from '../middleware/isNutr';
 
-async function resolveProfileId(
+const resolveProfileId = async (
   userId: number | undefined,
-): Promise<number | null> {
+): Promise<number | null> => {
   if (!userId) return null;
   const profile = await NutritionistProfile.findOne({
     where: { user: { id: userId } },
   });
   return profile?.id ?? null;
-}
+};
 
 @Resolver()
 export class AppointmentRequestResolver {
@@ -151,6 +151,50 @@ export class AppointmentRequestResolver {
     } catch {
       return false;
     }
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth, isUser)
+  async cancelAcceptedRequest(
+    @Arg('id', () => Int) id: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    const request = await AppointmentRequest.findOne({
+      where: { id, clientId: req.session.userId },
+      relations: ['slot'],
+    });
+
+    if (!request) return false;
+    if (request.status !== AppointmentStatus.ACCEPTED) return false;
+
+    request.slot.isAvailable = true;
+    await request.slot.save();
+    await AppointmentRequest.remove(request);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth, isNutr)
+  async cancelAcceptedRequestAsNutr(
+    @Arg('id', () => Int) id: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    const profileId = await resolveProfileId(req.session.userId);
+    if (!profileId) return false;
+
+    const request = await AppointmentRequest.createQueryBuilder('request')
+      .leftJoinAndSelect('request.slot', 'slot')
+      .where('request.id = :id', { id })
+      .andWhere('slot.nutritionistId = :profileId', { profileId })
+      .getOne();
+
+    if (!request) return false;
+    if (request.status !== AppointmentStatus.ACCEPTED) return false;
+
+    request.slot.isAvailable = true;
+    await request.slot.save();
+    await AppointmentRequest.remove(request);
+    return true;
   }
 
   @Mutation(() => Boolean)
