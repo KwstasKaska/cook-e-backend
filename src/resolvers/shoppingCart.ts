@@ -18,8 +18,6 @@ export class ShoppingCartResolver {
   @Query(() => [ShoppingCart])
   @UseMiddleware(isAuth, isUser)
   // Με την χρήση pagination, κάνουμε join τους πίνακες του cart με το recipe και έτσι τραβάμε τα στοιχεία που έχουμε στο καλάθι μας
-  @Query(() => [ShoppingCart])
-  @UseMiddleware(isAuth, isUser)
   async myCart(
     @Ctx() { req }: MyContext,
     @Arg('limit', () => Int, { defaultValue: 50 }) limit: number,
@@ -33,6 +31,17 @@ export class ShoppingCartResolver {
       skip: offset,
     });
   }
+
+  @Query(() => [Int])
+  @UseMiddleware(isAuth)
+  async myCartIngredientIds(@Ctx() { req }: MyContext): Promise<number[]> {
+    const items = await ShoppingCart.find({
+      where: { userId: req.session.userId },
+      select: ['ingredientId'],
+    });
+    return items.map((item) => item.ingredientId);
+  }
+
   @Mutation(() => ShoppingCart)
   @UseMiddleware(isAuth, isUser)
   async addToCart(
@@ -112,6 +121,20 @@ export class ShoppingCartResolver {
 
     if (!item) return false;
 
+    await ShoppingCart.remove(item);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async removeFromCartByIngredientId(
+    @Arg('ingredientId', () => Int) ingredientId: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    const item = await ShoppingCart.findOne({
+      where: { ingredientId, userId: req.session.userId },
+    });
+    if (!item) return false;
     await ShoppingCart.remove(item);
     return true;
   }
