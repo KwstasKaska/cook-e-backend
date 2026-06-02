@@ -8,6 +8,7 @@ import { ShoppingCart } from './ShoppingCart';
 import { Conversation } from '../Messsaging/Conversation';
 import { Message } from '../Messsaging/Message';
 import { UserFavorite } from './UserFavorite';
+import { UserArticleFavorite } from './UserArticleFavorite';
 import { ChefRating } from '../General/ChefRating';
 import { RecipeRating } from '../General/RecipeRating';
 import { NutritionistRating } from '../General/NutritionistRating';
@@ -37,6 +38,9 @@ export class User extends Information {
 
   @OneToMany(() => UserFavorite, (fav) => fav.user)
   favorites: UserFavorite[];
+
+  @OneToMany(() => UserArticleFavorite, (fav) => fav.user)
+  articleFavorites: UserArticleFavorite[];
 
   @OneToMany(() => ChefRating, (rating) => rating.user)
   chefRatings: ChefRating[];

@@ -10,15 +10,14 @@ import {
 import { UserFavorite } from '../entities/User/UserFavorite';
 import { Recipe } from '../entities/Chef/Recipe';
 import { isAuth } from '../middleware/isAuth';
-import { isUser } from '../middleware/isUser';
 import { MyContext } from '../types';
 
 @Resolver(UserFavorite)
 export class FavoritesResolver {
   //για να επιστρέψει την λίστα από UserFavorties objects
   @Query(() => [UserFavorite])
-  // κάνουμε τους ελέγχους για να πρέπει να είναι user και authenticated
-  @UseMiddleware(isAuth, isUser)
+  // κάνουμε τους ελέγχους για να πρέπει να είναι authenticated
+  @UseMiddleware(isAuth)
   async myFavorites(
     @Ctx() { req }: MyContext,
     // το limit/take χρησιμοποιείται για να δείξουμε πόσα θέλουμε
@@ -37,7 +36,7 @@ export class FavoritesResolver {
   }
 
   @Mutation(() => UserFavorite)
-  @UseMiddleware(isAuth, isUser)
+  @UseMiddleware(isAuth)
   async saveRecipe(
     // βάζω σε argument το recipeId που θέλω να εισάγω για να αποθηκεύω την συσκεκριμένη συνταγή
     @Arg('recipeId', () => Int) recipeId: number,
@@ -64,7 +63,7 @@ export class FavoritesResolver {
 
   // επιστρέφεται boolean αν υπάρχει ή οχι και διαγράφεται
   @Mutation(() => Boolean)
-  @UseMiddleware(isAuth, isUser)
+  @UseMiddleware(isAuth)
   async unsaveRecipe(
     @Arg('recipeId', () => Int) recipeId: number,
     @Ctx() { req }: MyContext,
@@ -80,7 +79,7 @@ export class FavoritesResolver {
   }
 
   @Query(() => Boolean)
-  @UseMiddleware(isAuth, isUser)
+  @UseMiddleware(isAuth)
   async isFavorited(
     @Arg('recipeId', () => Int) recipeId: number,
     @Ctx() { req }: MyContext,

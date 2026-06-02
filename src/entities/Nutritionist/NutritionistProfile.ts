@@ -13,7 +13,6 @@ import { Field, Int, ObjectType } from 'type-graphql';
 import { MealScheduler } from './MealScheduler';
 import { NutritionistRating } from '../General/NutritionistRating';
 
-// test push
 @ObjectType()
 @Entity()
 export class NutritionistProfile extends BaseEntity {

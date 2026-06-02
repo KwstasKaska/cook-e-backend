@@ -34,6 +34,7 @@ import { MessagingResolver } from './resolvers/messaging';
 import { CookedRecipeResolver } from './resolvers/cookedRecipe';
 import { RatingResolver } from './resolvers/ratings';
 import { RecipeSuggestionResolver } from './resolvers/recipeSuggestion';
+import { ArticleFavoritesResolver } from './resolvers/userArticleFavorites';
 
 const main = async () => {
   // Προκειμένου να συναναστρέφομαι με την βάση μου, χρειάζεται να κάνω initialize
@@ -98,6 +99,7 @@ const main = async () => {
         RatingResolver,
         CookedRecipeResolver,
         RecipeSuggestionResolver,
+        ArticleFavoritesResolver,
       ],
       validate: false,
     }),
