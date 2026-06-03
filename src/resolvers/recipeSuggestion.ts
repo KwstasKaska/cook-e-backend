@@ -14,16 +14,16 @@ export class RecipeSuggestionResolver {
   ): Promise<RecipeSuggestion[]> {
     if (!ingredientIds || ingredientIds.length === 0) return [];
 
-    const rows: { recipeId: number; missing_count: number }[] =
+    const rows: { recipeId: number; match_count: number }[] =
       await AppDataSource.query(
         `
         SELECT
           ri."recipeId",
-          COUNT(*) FILTER (WHERE ri."ingredientId" != ALL($1::int[]))::int AS missing_count
+          COUNT(*) FILTER (WHERE ri."ingredientId" = ANY($1::int[]))::int AS match_count
         FROM recipe_ingredient ri
         GROUP BY ri."recipeId"
         HAVING COUNT(*) FILTER (WHERE ri."ingredientId" = ANY($1::int[])) > 0
-        ORDER BY missing_count ASC
+        ORDER BY match_count DESC
         `,
         [ingredientIds],
       );
@@ -48,12 +48,9 @@ export class RecipeSuggestionResolver {
 
       if (!recipe) continue;
 
-      const missingIngredients: Ingredient[] =
-        row.missing_count > 0
-          ? recipe.recipeIngredients
-              .filter((ri) => !ingredientIds.includes(ri.ingredientId))
-              .map((ri) => ri.ingredient)
-          : [];
+      const matchedIngredients: Ingredient[] = recipe.recipeIngredients
+        .filter((ri) => ingredientIds.includes(ri.ingredientId))
+        .map((ri) => ri.ingredient);
 
       let missingUtensils: Utensil[] = [];
       if (utensilIds.length > 0 && recipe.utensils.length > 0) {
@@ -64,8 +61,8 @@ export class RecipeSuggestionResolver {
 
       suggestions.push({
         recipe,
-        missingCount: row.missing_count,
-        missingIngredients,
+        matchCount: row.match_count,
+        matchedIngredients,
         missingUtensils,
       });
     }
