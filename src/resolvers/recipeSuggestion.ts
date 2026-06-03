@@ -22,7 +22,7 @@ export class RecipeSuggestionResolver {
           COUNT(*) FILTER (WHERE ri."ingredientId" = ANY($1::int[]))::int AS match_count
         FROM recipe_ingredient ri
         GROUP BY ri."recipeId"
-        HAVING COUNT(*) FILTER (WHERE ri."ingredientId" = ANY($1::int[])) > 0
+        HAVING COUNT(*) FILTER (WHERE ri."ingredientId" = ANY($1::int[])) > 1
         ORDER BY match_count DESC
         `,
         [ingredientIds],
