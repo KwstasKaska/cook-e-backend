@@ -175,7 +175,7 @@ export class RatingResolver {
   }
 
   @Mutation(() => RecipeRating)
-  @UseMiddleware(isAuth, isUser)
+  @UseMiddleware(isAuth)
   async rateRecipe(
     @Arg('recipeId', () => Int) recipeId: number,
     @Arg('score', () => Int) score: number,
@@ -187,6 +187,15 @@ export class RatingResolver {
 
     const recipe = await Recipe.findOne({ where: { id: recipeId } });
     if (!recipe) throw new Error('Η συνταγή δεν βρέθηκε.');
+
+    if (req.session.userRole === 'chef') {
+      const chefProfile = await ChefProfile.findOne({
+        where: { user: { id: req.session.userId } },
+      });
+      if (chefProfile && chefProfile.id === recipe.authorId) {
+        throw new Error('Δεν μπορείς να αξιολογήσεις τη δική σου συνταγή.');
+      }
+    }
 
     const existing = await RecipeRating.findOne({
       where: { userId: req.session.userId, recipeId },
@@ -210,7 +219,7 @@ export class RatingResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseMiddleware(isAuth, isUser)
+  @UseMiddleware(isAuth)
   async deleteRecipeRating(
     @Arg('recipeId', () => Int) recipeId: number,
     @Ctx() { req }: MyContext,
