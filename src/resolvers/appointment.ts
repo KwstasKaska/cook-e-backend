@@ -47,18 +47,16 @@ export class AppointmentResolver {
     const profileId = await resolveProfileId(req.session.userId);
     if (!profileId) return [];
 
-    const safeLimit = Math.min(limit, 100);
-    const query = `
-      SELECT * FROM appointment
-      WHERE "nutritionistId" = $1
-      ${date ? `AND date = $2` : ''}
-      ORDER BY date, time
-      LIMIT $${date ? 3 : 2} OFFSET $${date ? 4 : 3};
-    `;
+    const safeLimit = Math.min(limit, 200);
+    const today = new Date().toISOString().slice(0, 10);
+
+    const query = date
+      ? `SELECT * FROM appointment WHERE "nutritionistId" = $1 AND date = $2 ORDER BY date, time LIMIT $3 OFFSET $4`
+      : `SELECT * FROM appointment WHERE "nutritionistId" = $1 AND date >= $2 ORDER BY date, time LIMIT $3 OFFSET $4`;
 
     const params = date
       ? [profileId, date, safeLimit, offset]
-      : [profileId, safeLimit, offset];
+      : [profileId, today, safeLimit, offset];
 
     return AppDataSource.query(query, params);
   }
