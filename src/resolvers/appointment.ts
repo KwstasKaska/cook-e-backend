@@ -41,7 +41,7 @@ export class AppointmentResolver {
   async getMyAppointments(
     @Ctx() { req }: MyContext,
     @Arg('date', () => String, { nullable: true }) date?: string,
-    @Arg('limit', () => Int, { defaultValue: 20 }) limit: number = 20,
+    @Arg('limit', () => Int, { defaultValue: 100 }) limit: number = 100,
     @Arg('offset', () => Int, { defaultValue: 0 }) offset: number = 0,
   ): Promise<Appointment[]> {
     const profileId = await resolveProfileId(req.session.userId);
